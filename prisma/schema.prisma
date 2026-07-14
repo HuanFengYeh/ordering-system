@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // Neon 等 serverless Postgres：app 走連線池(url)，
+  // migration 走直連(directUrl)。本機測試兩者可指向同一個 DB。
+  directUrl = env("DIRECT_URL")
+}
+
+// 桌位：每一桌有唯一的 token，QR code 就編碼這個 token
+model Table {
+  id        Int      @id @default(autoincrement())
+  number    Int      @unique // 桌號，例如 1、2、3
+  token     String   @unique // QR code 內容，掃碼後用來定位桌位
+  orders    Order[]
+  createdAt DateTime @default(now())
+}
+
+// 菜單分類，例如 招牌湯麵 / 暖胃鍋品 / 飲品
+model Category {
+  id    Int        @id @default(autoincrement())
+  name  String
+  note  String? // 分類說明，例如「意麵、雞絲、河粉、冬粉四款麵體同價」
+  sort  Int        @default(0)
+  items MenuItem[]
+}
+
+// 單一菜色（可能含多個規格 / 變體）
+model MenuItem {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  available   Boolean   @default(true)
+  sort        Int       @default(0)
+  categoryId  Int
+  category    Category  @relation(fields: [categoryId], references: [id])
+  variants    Variant[]
+}
+
+// 菜色的規格 / 變體，價格掛在這裡
+// 例：招牌炸雞排湯麵 → 變體「意麵/雞絲/河粉/冬粉」$140、變體「讚岐烏龍」$155
+// 單一價格的菜色 → 只有一個 label 為空字串的變體
+model Variant {
+  id         Int         @id @default(autoincrement())
+  label      String // 規格名稱，單一價格時為空字串
+  price      Int // 以「元」為單位的整數，避免浮點誤差
+  sort       Int         @default(0)
+  menuItemId Int
+  menuItem   MenuItem    @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+}
+
+// SQLite 不支援 enum，status 用字串：
+// SUBMITTED：客人已送出、待結帳
+// PAID：櫃檯已結帳、可出單
+// CANCELLED：作廢
+model Order {
+  id     Int    @id @default(autoincrement())
+  // 內用有桌號、外帶沒有，故 tableId 可為空
+  tableId Int?
+  table   Table? @relation(fields: [tableId], references: [id])
+  // 用餐方式：DINE_IN 內用 / TAKEOUT 外帶
+  orderType  String  @default("DINE_IN")
+  // 外帶取餐資訊（姓名或電話末三碼），內用可為空
+  pickupName String?
+  status    String      @default("SUBMITTED")
+  total     Int         @default(0) // 下單當下計算的總金額（元）
+  items     OrderItem[]
+  createdAt DateTime    @default(now())
+  paidAt    DateTime?
+
+  // 出單佇列：結帳時若啟用雲端出單機，printQueued 設為 true，
+  // 印表機輪詢時抓到未印的單，印完回報後寫入 printedAt。
+  printQueued Boolean   @default(false)
+  printedAt   DateTime?
+}
+
+// 訂單明細：菜名、規格、價格皆為下單當下的快照
+// 之後改菜單不影響歷史訂單
+model OrderItem {
+  id           Int      @id @default(autoincrement())
+  orderId      Int
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId    Int
+  variant      Variant  @relation(fields: [variantId], references: [id])
+  itemName     String // 菜名快照
+  variantLabel String // 規格快照
+  price        Int // 單價快照（元）
+  quantity     Int
+  note         String? // 客人備註，例如「不要辣」
+}
