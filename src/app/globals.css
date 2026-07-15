@@ -150,17 +150,24 @@ button {
 }
 
 /* 品項卡（Toast 式）：左方大圖 + 右方 名稱/描述/價格，右下角加入鈕 */
-/* 每個品項＝框卡：只用暖色邊框框住、不填白底（維持奶油底），hover 才暖色填色 */
+/* 扁平列 + 細線分隔（Toast 做法，不用框） */
 .item {
   position: relative;
   display: flex;
   gap: 14px;
-  padding: 12px;
-  border: 1px solid #e6dcc7;
-  border-radius: 16px;
-  margin-bottom: 10px;
-  background: transparent;
-  transition: background 0.15s, border-color 0.15s;
+  padding: 14px 8px;
+  margin: 0 -8px; /* hover 底色左右各多一點，內容仍對齊 */
+  border-radius: 12px;
+  transition: background 0.15s;
+}
+/* 分隔線用 pseudo，維持直線且對齊內容（不受 hover 圓角影響） */
+.item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 0;
+  border-bottom: 1px solid var(--border);
 }
 .item.tappable {
   cursor: pointer;
@@ -168,10 +175,9 @@ button {
 .menu-list {
   margin-bottom: 4px;
 }
-/* 滑鼠 hover 回饋改暖色，且落在框卡內（觸控裝置無效，不影響手機） */
+/* hover：明顯的暖色一整列（對齊 Toast） */
 .item.tappable:hover {
-  background: #f7edda;
-  border-color: #ecdcb8;
+  background: #f4e4bf;
 }
 .catnav button:hover {
   color: var(--text);
