@@ -696,7 +696,6 @@ function CustomizeModal({
             <div className="grp-card">
               <div className="grp-head">
                 <span className="grp-title">規格</span>
-                <span className="badge-req">必選</span>
               </div>
               <div className="grp-hint">選 1 項</div>
               {item.variants.map((v) => {
@@ -728,16 +727,15 @@ function CustomizeModal({
               <div key={g.id} className="grp-card">
                 <div className="grp-head">
                   <span className="grp-title">{g.name}</span>
-                  <span className={required ? 'badge-req' : 'badge-opt'}>
-                    {required ? '必選' : '選填'}
-                  </span>
                 </div>
                 <div className="grp-hint">
                   {multi
                     ? `最多選 ${g.maxSelect} 項${
                         required ? `，至少 ${minFor(g)} 項` : '（可不選）'
                       }`
-                    : '選 1 項'}
+                    : required
+                      ? '選 1 項'
+                      : '選 1 項（可不選）'}
                 </div>
                 {g.options.map((o) => {
                   const sel = cur.includes(o.id);
