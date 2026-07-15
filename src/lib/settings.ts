@@ -25,22 +25,25 @@ function hash(s: string): string {
 }
 
 // —— 櫃檯密碼 ——
+// 救援設計：Vercel 環境變數 ADMIN_PASSWORD 是「永久救援金鑰」，
+// 即使之後在後台改過密碼、又忘記，用這組一律能登入再重設。
 export async function checkAdminPassword(input: string): Promise<boolean> {
+  const env = process.env.ADMIN_PASSWORD;
+  if (env && input === env) return true;
   const dbHash = await get('admin_password_hash');
-  if (dbHash) return hash(input) === dbHash;
-  const env = process.env.ADMIN_PASSWORD; // 尚未在後台設定過 → 用 env 引導
-  return !!env && input === env;
+  return !!dbHash && hash(input) === dbHash;
 }
 export async function setAdminPassword(next: string): Promise<void> {
   await setSetting('admin_password_hash', hash(next));
 }
 
 // —— 老闆 PIN ——
+// 同樣：環境變數 OWNER_PIN 為永久救援金鑰。
 export async function checkOwnerPin(input: string): Promise<boolean> {
-  const dbHash = await get('owner_pin_hash');
-  if (dbHash) return hash(input) === dbHash;
   const env = process.env.OWNER_PIN;
-  return !!env && input === env;
+  if (env && input === env) return true;
+  const dbHash = await get('owner_pin_hash');
+  return !!dbHash && hash(input) === dbHash;
 }
 export async function setOwnerPin(next: string): Promise<void> {
   await setSetting('owner_pin_hash', hash(next));

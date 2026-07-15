@@ -143,6 +143,10 @@ export default function AdminHelpPage() {
             q="看不到營業額？"
             a="營業額在「收班」頁、需要老闆 PIN。這是刻意設計，員工端看不到彙總金額。"
           />
+          <Qa
+            q="忘記密碼 / 老闆 PIN 怎麼辦？"
+            a="用當初在 Vercel 設定的那組（ADMIN_PASSWORD / OWNER_PIN）一定能登入，那是永久救援金鑰；進去後到「設定」重設一組新的即可。連救援金鑰也忘了，請找系統管理者到 Vercel 查看或更新。"
+          />
         </Section>
 
         <div style={{ height: 30 }} />
