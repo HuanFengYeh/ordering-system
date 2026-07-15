@@ -35,6 +35,21 @@ export type Order = {
   total: number;
   createdAt: string;
   paidAt: string | null;
+  cancelledAt: string | null;
+  cancelReason: string | null;
   table: { number: number } | null;
   items: OrderItem[];
+};
+
+export type DaySummary = {
+  businessDate: string;
+  totalRevenue: number;
+  orderCount: number;
+  dineInRevenue: number;
+  dineInCount: number;
+  takeoutRevenue: number;
+  takeoutCount: number;
+  cancelledCount: number;
+  unpaidCount: number;
+  avgTicket: number;
 };

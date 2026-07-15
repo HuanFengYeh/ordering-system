@@ -72,6 +72,12 @@ model Order {
   createdAt DateTime    @default(now())
   paidAt    DateTime?
 
+  // 作廢（手動作廢 or 逾時未結自動作廢）
+  cancelledAt DateTime?
+  cancelReason String?
+  // 還原過的單改由人工控管，不再自動過期
+  expireExempt Boolean @default(false)
+
   // 出單佇列：結帳時若啟用雲端出單機，printQueued 設為 true，
   // 印表機輪詢時抓到未印的單，印完回報後寫入 printedAt。
   printQueued Boolean   @default(false)
@@ -91,4 +97,18 @@ model OrderItem {
   price        Int // 單價快照（元）
   quantity     Int
   note         String? // 客人備註，例如「不要辣」
+}
+
+// 收班日結：打烊時記錄當日營業總結（以台灣時間的營業日為單位）
+model DailyClose {
+  id             Int      @id @default(autoincrement())
+  businessDate   String   @unique // 台灣時間營業日，格式 YYYY-MM-DD
+  closedAt       DateTime @default(now())
+  totalRevenue   Int // 當日已結帳總營業額（元）
+  orderCount     Int // 已結帳單數
+  dineInRevenue  Int
+  dineInCount    Int
+  takeoutRevenue Int
+  takeoutCount   Int
+  cancelledCount Int // 當日作廢單數
 }
