@@ -6,6 +6,7 @@ import {
   ORDER_TYPE,
   ORDER_TYPE_LABEL,
 } from '@/lib/config';
+import { formatTaipei } from '@/lib/businessDay';
 import PrintTrigger from './PrintTrigger';
 
 // 出單 / 收據頁。結帳後自動開啟並列印。
@@ -60,7 +61,7 @@ export default async function PrintPage({
       </div>
       <div className="r-line">
         <span>時間</span>
-        <span>{new Date(order.createdAt).toLocaleString('zh-TW')}</span>
+        <span>{formatTaipei(order.createdAt)}</span>
       </div>
 
       <hr />

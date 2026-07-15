@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ADMIN_COOKIE, sessionValue } from '@/lib/auth';
+import { checkAdminPassword } from '@/lib/settings';
 
 // POST /api/admin/login  body: { password }
 export async function POST(req: Request) {
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: '格式錯誤' }, { status: 400 });
   }
 
-  if (!body.password || body.password !== process.env.ADMIN_PASSWORD) {
+  if (!body.password || !(await checkAdminPassword(body.password))) {
     return NextResponse.json({ error: '密碼錯誤' }, { status: 401 });
   }
 

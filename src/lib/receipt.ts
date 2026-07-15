@@ -4,6 +4,7 @@ import {
   ORDER_TYPE_LABEL,
   ORDER_TYPE,
 } from './config';
+import { formatTaipei } from './businessDay';
 
 // 收據紙寬對應的「等寬半形字元數」：80mm 約 48、58mm 約 32。
 export const RECEIPT_COLS = Number(process.env.PRINT_COLS) || 48;
@@ -74,7 +75,7 @@ export function buildReceiptText(order: ReceiptOrder): string {
     : `桌號 ${order.table?.number ?? '-'}`;
   lines.push(twoCols(leftId, `#${order.id}`));
   if (order.pickupName) lines.push(`取餐：${order.pickupName}`);
-  lines.push(new Date(order.createdAt).toLocaleString('zh-TW'));
+  lines.push(formatTaipei(order.createdAt));
   lines.push(divider());
 
   for (const it of order.items) {

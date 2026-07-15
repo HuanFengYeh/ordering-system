@@ -22,16 +22,31 @@ const SPICE = {
     ['大辣', 0],
   ],
 };
-const ADDON = {
-  name: '加料',
+// 加購飲料：照菜單原價、無折扣，客人可加點一杯以上
+const DRINKS = {
+  name: '飲料',
   required: false,
   min: 0,
-  max: 3,
+  max: 4,
   options: [
-    ['加溏心蛋', 15],
-    ['加起司', 25],
-    ['加麵', 20],
-    ['加青菜', 15],
+    ['紅茶', 30],
+    ['奶茶', 40],
+    ['冬瓜茶', 30],
+    ['冬瓜檸檬', 40],
+  ],
+};
+// 加購超值加點：照菜單原價、無折扣
+const SNACKS = {
+  name: '加點',
+  required: false,
+  min: 0,
+  max: 5,
+  options: [
+    ['炸雞排', 90],
+    ['雞塊', 70],
+    ['起司薯球', 80],
+    ['手工甜不辣', 80],
+    ['蒜香法國麵包+玉米濃湯', 75],
   ],
 };
 // 火鍋料：四種肉都附火鍋料，客人可選擇維持、換成蔬菜、或不要。
@@ -47,11 +62,17 @@ const HOTPOT = {
     ['不要火鍋料', 0],
   ],
 };
-// 依「分類名稱」套用客製群組到該分類的所有品項（demo 用；正式可在後台逐項設定）
+// 依「分類名稱」套用客製群組到該分類的所有品項。
+// 飲料/加點＝原價加購，套用到所有主餐（鍋/麵/飯）。
+// ⚠️ 辣度為預設示範，實際辣度選項請依店家調整（可在後台改）。
 const CATEGORY_MODIFIERS = {
-  暖胃鍋品: [SPICE, HOTPOT, ADDON],
-  招牌湯麵: [ADDON],
-  經典炒麵: [SPICE, ADDON],
+  招牌湯麵: [DRINKS, SNACKS],
+  暖胃鍋品: [SPICE, HOTPOT, DRINKS, SNACKS],
+  經典炒麵: [SPICE, DRINKS, SNACKS],
+  義式風味: [DRINKS, SNACKS],
+  經典燴飯: [DRINKS, SNACKS],
+  限量蛋包麵: [DRINKS, SNACKS],
+  熱銷蛋包飯: [DRINKS, SNACKS],
 };
 
 // 麵體讓客人單獨選：意麵/雞絲/河粉/冬粉同價，讚岐烏龍加價

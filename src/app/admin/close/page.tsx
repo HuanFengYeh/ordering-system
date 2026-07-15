@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { RESTAURANT_NAME } from '@/lib/config';
+import { formatTaipei } from '@/lib/businessDay';
 import type { DaySummary } from '@/lib/types';
 
 type Close = {
@@ -144,7 +145,7 @@ export default function AdminClosePage() {
                 {todayClose && (
                   <>
                     <br />
-                    已收班　{new Date(todayClose.closedAt).toLocaleString('zh-TW')}
+                    已收班　{formatTaipei(todayClose.closedAt)}
                   </>
                 )}
               </div>

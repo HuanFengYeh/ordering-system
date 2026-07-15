@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ORDER_STATUS } from '@/lib/config';
-
-// 出單方式：browser（瀏覽器列印，預設）/ cloudprnt（雲端出單機）/ both
-function printMode(): 'browser' | 'cloudprnt' | 'both' {
-  const m = (process.env.PRINT_MODE || 'browser').toLowerCase();
-  return m === 'cloudprnt' || m === 'both' ? m : 'browser';
-}
+import { getPrintMode } from '@/lib/settings';
 
 // POST /api/admin/orders/[id]/pay — 結帳，狀態改為 PAID，並依設定排入出單佇列
 export async function POST(
@@ -22,7 +17,7 @@ export async function POST(
     return NextResponse.json({ error: '此訂單已結帳' }, { status: 409 });
   }
 
-  const mode = printMode();
+  const mode = await getPrintMode();
   const queueCloud = mode === 'cloudprnt' || mode === 'both';
   const openBrowserPrint = mode === 'browser' || mode === 'both';
 

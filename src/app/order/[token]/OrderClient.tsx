@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Category, MenuItem, ModifierGroup } from '@/lib/types';
 import { ORDER_TYPE } from '@/lib/config';
-import { IconCheck, IconDineIn, IconTakeout } from '@/app/icons';
+import { IconCheck, IconDineIn, IconDish, IconTakeout } from '@/app/icons';
 
 // 已選的客製選項（下單當下的快照，價格一併記錄）
 type SelectedOption = {
@@ -319,96 +319,87 @@ export default function OrderClient({
             {cat.note && <div className="cat-note">＊{cat.note}</div>}
             <div className="card">
               {cat.items.map((item) => {
-                const hasMods = item.modifierGroups.length > 0;
+                // 有客製或多規格 → 點整張卡開客製視窗；單一規格 → 就地加減
+                const needsModal =
+                  item.modifierGroups.length > 0 || item.variants.length > 1;
                 const inCart = itemQtyInCart(item);
-                const minPrice = Math.min(...item.variants.map((v) => v.price));
-                const multiVariant = item.variants.length > 1;
+                const minPrice = Math.min(
+                  ...item.variants.map((v) => v.price)
+                );
+                const priceLabel =
+                  item.variants.length > 1 ? `$${minPrice} 起` : `$${minPrice}`;
+                const simple = item.variants[0];
+                const simpleQty = needsModal
+                  ? 0
+                  : cart[keyFor(simple.id, [])]?.quantity ?? 0;
+
                 return (
-                  <div key={item.id} className="item">
-                    <div className="item-head">
-                      {item.imageUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          className="item-photo"
-                          src={item.imageUrl}
-                          alt={item.name}
-                        />
-                      )}
-                      <div className="item-body">
-                        <div className="item-name">{item.name}</div>
-                        {item.description && (
-                          <div className="item-desc">{item.description}</div>
-                        )}
+                  <div
+                    key={item.id}
+                    className={needsModal ? 'item tappable' : 'item'}
+                    onClick={
+                      needsModal ? () => setCustomizing(item) : undefined
+                    }
+                  >
+                    {item.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        className="item-photo"
+                        src={item.imageUrl}
+                        alt={item.name}
+                      />
+                    ) : (
+                      <div className="item-photo placeholder" aria-hidden="true">
+                        <IconDish size={28} />
                       </div>
+                    )}
+
+                    <div className="item-body">
+                      <div className="item-name">{item.name}</div>
+                      {item.description && (
+                        <div className="item-desc">{item.description}</div>
+                      )}
+                      <div className="item-price">{priceLabel}</div>
                     </div>
 
-                    {hasMods ? (
-                      /* 需客製：整列可點，開啟客製視窗 */
-                      <div className="variant-row">
-                        <span className="variant-label">
-                          {multiVariant ? `$${minPrice} 起` : `$${minPrice}`}
-                          <span
-                            style={{
-                              color: 'var(--muted)',
-                              fontSize: 12,
-                              marginLeft: 6,
-                            }}
-                          >
-                            可客製
-                          </span>
-                        </span>
-                        <span style={{ display: 'flex', alignItems: 'center' }}>
-                          {inCart > 0 && (
-                            <span className="item-qty-badge">已加 {inCart}</span>
-                          )}
-                          <button
-                            className="btn-choose"
-                            onClick={() => setCustomizing(item)}
-                          >
-                            選擇 ＋
-                          </button>
-                        </span>
+                    {needsModal ? (
+                      <button
+                        className={inCart > 0 ? 'item-add filled' : 'item-add'}
+                        aria-label={`選擇 ${item.name}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCustomizing(item);
+                        }}
+                      >
+                        {inCart > 0 ? inCart : '＋'}
+                      </button>
+                    ) : simpleQty > 0 ? (
+                      <div
+                        className="item-stepper"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          aria-label="減少"
+                          onClick={() => addSimpleVariant(item, simple, -1)}
+                        >
+                          −
+                        </button>
+                        <span className="n">{simpleQty}</span>
+                        <button
+                          aria-label="增加"
+                          onClick={() => addSimpleVariant(item, simple, +1)}
+                        >
+                          ＋
+                        </button>
                       </div>
                     ) : (
-                      /* 無客製：維持逐規格快速 +/− */
-                      item.variants.map((v) => {
-                        const qty = cart[keyFor(v.id, [])]?.quantity ?? 0;
-                        return (
-                          <div
-                            key={v.id}
-                            className={
-                              qty > 0 ? 'variant-row in-cart' : 'variant-row'
-                            }
-                          >
-                            <span className="variant-label">{v.label}</span>
-                            <span
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 14,
-                              }}
-                            >
-                              <span className="price">${v.price}</span>
-                              <span className="qty">
-                                <button
-                                  aria-label="減少"
-                                  disabled={qty === 0}
-                                  onClick={() => addSimpleVariant(item, v, -1)}
-                                >
-                                  −
-                                </button>
-                                <span className="n">{qty}</span>
-                                <button
-                                  aria-label="增加"
-                                  onClick={() => addSimpleVariant(item, v, +1)}
-                                >
-                                  ＋
-                                </button>
-                              </span>
-                            </span>
-                          </div>
-                        );
-                      })
+                      <button
+                        className="item-add"
+                        aria-label={`加入 ${item.name}`}
+                        onClick={() => addSimpleVariant(item, simple, +1)}
+                      >
+                        ＋
+                      </button>
                     )}
                   </div>
                 );

@@ -12,7 +12,14 @@ export async function GET() {
           variants: { orderBy: { sort: 'asc' } },
           modifierGroups: {
             orderBy: { sort: 'asc' },
-            include: { options: { orderBy: { sort: 'asc' } } },
+            include: {
+              options: {
+                orderBy: { sort: 'asc' },
+                include: {
+                  sourceVariant: { include: { menuItem: true } },
+                },
+              },
+            },
           },
         },
       },

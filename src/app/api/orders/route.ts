@@ -54,7 +54,13 @@ export async function POST(req: Request) {
     include: {
       menuItem: {
         include: {
-          modifierGroups: { include: { options: true } },
+          modifierGroups: {
+            include: {
+              options: {
+                include: { sourceVariant: { include: { menuItem: true } } },
+              },
+            },
+          },
         },
       },
     },
@@ -82,12 +88,16 @@ export async function POST(req: Request) {
       new Set((line.modifierOptionIds ?? []).map((n) => Number(n)))
     );
 
-    // 選項必須屬於本菜色且仍供應
+    // 選項必須屬於本菜色且仍供應（連動品項則來源也要仍在販售）
     for (const id of chosenIds) {
       const hit = optionById.get(id);
-      if (!hit || !hit.option.available) {
+      const sourceOff =
+        hit?.option.sourceVariantId &&
+        (!hit.option.sourceVariant ||
+          !hit.option.sourceVariant.menuItem.available);
+      if (!hit || !hit.option.available || sourceOff) {
         return NextResponse.json(
-          { error: `${variant.menuItem.name}：客製選項無效` },
+          { error: `${variant.menuItem.name}：客製選項無效或已售完` },
           { status: 400 }
         );
       }
@@ -114,14 +124,15 @@ export async function POST(req: Request) {
     }
 
     // 全含單價 = 規格價 + 已選選項加價；並快照每個選項
+    // 連動菜單品項的選項：名稱/加價一律以來源規格「當下」的值為準
     const modifiersData = chosenIds.map((id) => {
       const { group, option } = optionById.get(id)!;
-      return {
-        optionId: option.id,
-        groupName: group.name,
-        label: option.label,
-        priceDelta: option.priceDelta,
-      };
+      const sv = option.sourceVariant;
+      const label = sv
+        ? sv.menuItem.name + (sv.label ? `（${sv.label}）` : '')
+        : option.label;
+      const priceDelta = sv ? sv.price : option.priceDelta;
+      return { optionId: option.id, groupName: group.name, label, priceDelta };
     });
     const unitPrice =
       variant.price + modifiersData.reduce((s, m) => s + m.priceDelta, 0);

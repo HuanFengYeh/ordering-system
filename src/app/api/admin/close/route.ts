@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 // GET /api/admin/close — 今日即時總結 + 歷史收班紀錄（需老闆 PIN）
 export async function GET(req: Request) {
-  if (!ownerPinOk(req)) {
+  if (!(await ownerPinOk(req))) {
     return NextResponse.json({ error: '需要老闆 PIN' }, { status: 403 });
   }
   await expireStaleOrders();
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
 
 // POST /api/admin/close — 收班：把今日總結寫入 DailyClose（可重複執行，會更新）
 export async function POST(req: Request) {
-  if (!ownerPinOk(req)) {
+  if (!(await ownerPinOk(req))) {
     return NextResponse.json({ error: '需要老闆 PIN' }, { status: 403 });
   }
   // 收班前先把逾時未結的單清掉，數字才乾淨

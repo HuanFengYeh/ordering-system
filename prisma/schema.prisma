@@ -60,12 +60,15 @@ model ModifierGroup {
 // 群組內的單一選項，例如「大辣」「加起司 +20」
 model ModifierOption {
   id         Int      @id @default(autoincrement())
-  label      String // 選項名稱，例如「不辣」「加起司」
-  priceDelta Int      @default(0) // 加價（元），0 = 不加價
+  label      String // 選項名稱（自由填）；若連動菜單品項，顯示以來源為準
+  priceDelta Int      @default(0) // 加價（元）；連動菜單品項時以來源規格價為準
   available  Boolean  @default(true)
   sort       Int      @default(0)
   groupId    Int
   group      ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  // 連動菜單品項：加點選項＝既有菜品，名稱與價格跟著菜單走（避免重複維護）
+  sourceVariantId Int?
+  sourceVariant   Variant? @relation("OptionSource", fields: [sourceVariantId], references: [id], onDelete: SetNull)
   orderItemModifiers OrderItemModifier[]
 }
 
@@ -80,6 +83,8 @@ model Variant {
   menuItemId Int
   menuItem   MenuItem    @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
+  // 被哪些加點選項連動（此規格作為某主餐的加購品項）
+  addonOptions ModifierOption[] @relation("OptionSource")
 }
 
 // SQLite 不支援 enum，status 用字串：
@@ -141,6 +146,14 @@ model OrderItemModifier {
   groupName   String // 群組名稱快照，例如「辣度」
   label       String // 選項名稱快照，例如「大辣」
   priceDelta  Int      @default(0) // 加價快照（元）
+}
+
+// 後台可調設定（key/value）。密碼與 PIN 存雜湊，不存明文。
+// 未設定的 key 由環境變數提供預設值（見 lib/settings.ts）。
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }
 
 // 收班日結：打烊時記錄當日營業總結（以台灣時間的營業日為單位）

@@ -11,6 +11,13 @@ type ModOption = {
   label: string;
   priceDelta: number;
   available: boolean;
+  // 若連動菜單品項，這裡帶來源規格（名稱/價格以來源為準）
+  sourceVariantId: number | null;
+  sourceVariant: {
+    price: number;
+    label: string;
+    menuItem: { name: string; available: boolean };
+  } | null;
 };
 type ModGroup = {
   id: number;
@@ -28,6 +35,12 @@ type Item = {
   available: boolean;
   variants: Variant[];
   modifierGroups: ModGroup[];
+};
+type Category = {
+  id: number;
+  name: string;
+  note: string | null;
+  items: Item[];
 };
 
 // 前端把照片縮圖後轉為 data URL（serverless 無持久檔案系統，存 DB）
@@ -56,12 +69,6 @@ function downscaleToDataUrl(
     img.src = url;
   });
 }
-type Category = {
-  id: number;
-  name: string;
-  note: string | null;
-  items: Item[];
-};
 
 async function api(url: string, method: string, body?: unknown) {
   const res = await fetch(url, {
@@ -489,6 +496,8 @@ function GroupBlock({
   const [max, setMax] = useState(String(group.maxSelect));
   const [newOpt, setNewOpt] = useState('');
   const [newDelta, setNewDelta] = useState('');
+  const [showPicker, setShowPicker] = useState(false);
+  const [showApply, setShowApply] = useState(false);
 
   async function saveGroup(patch: Record<string, unknown>) {
     await api(`/api/admin/modifier-groups/${group.id}`, 'PATCH', patch);
@@ -617,6 +626,45 @@ function GroupBlock({
           ＋ 選項
         </button>
       </div>
+
+      {/* 連動菜單品項 & 一鍵套用 */}
+      <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+        <button
+          className="btn-ghost"
+          style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
+          onClick={() => {
+            setShowPicker((v) => !v);
+            setShowApply(false);
+          }}
+        >
+          🔗 從菜單挑選
+        </button>
+        <button
+          className="btn-ghost"
+          style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
+          onClick={() => {
+            setShowApply((v) => !v);
+            setShowPicker(false);
+          }}
+        >
+          套用到分類…
+        </button>
+      </div>
+
+      {showPicker && (
+        <MenuPicker
+          groupId={group.id}
+          onChange={onChange}
+          onClose={() => setShowPicker(false)}
+        />
+      )}
+      {showApply && (
+        <ApplyPicker
+          groupId={group.id}
+          onChange={onChange}
+          onClose={() => setShowApply(false)}
+        />
+      )}
     </div>
   );
 }
@@ -630,6 +678,7 @@ function OptionRow({
 }) {
   const [label, setLabel] = useState(option.label);
   const [delta, setDelta] = useState(String(option.priceDelta));
+  const linked = option.sourceVariantId != null;
 
   async function save() {
     if (label !== option.label || Number(delta) !== option.priceDelta) {
@@ -650,6 +699,59 @@ function OptionRow({
     if (!confirm(`刪除選項「${option.label}」？`)) return;
     await api(`/api/admin/modifier-options/${option.id}`, 'DELETE');
     onChange();
+  }
+
+  // 連動菜單品項：名稱/價格唯讀（跟菜單走），只能停售或刪除
+  if (linked) {
+    const sv = option.sourceVariant;
+    const name = sv
+      ? sv.menuItem.name + (sv.label ? `（${sv.label}）` : '')
+      : option.label;
+    const price = sv ? sv.price : option.priceDelta;
+    const gone = !sv || !sv.menuItem.available;
+    return (
+      <div
+        style={{
+          display: 'flex',
+          gap: 6,
+          alignItems: 'center',
+          marginTop: 6,
+          paddingLeft: 8,
+          opacity: option.available && !gone ? 1 : 0.45,
+        }}
+      >
+        <span style={{ fontSize: 12, flex: 1 }}>
+          🔗 {name}{' '}
+          <span style={{ color: 'var(--brand-dark)', fontWeight: 700 }}>
+            +${price}
+          </span>
+          {gone && (
+            <span
+              style={{ color: 'var(--danger)', fontSize: 11, marginLeft: 6 }}
+            >
+              （來源已停售）
+            </span>
+          )}
+          <span style={{ color: '#aaa', fontSize: 11, marginLeft: 6 }}>
+            菜單連動
+          </span>
+        </span>
+        <button
+          className={option.available ? 'btn-ghost' : 'btn-primary'}
+          style={{ padding: '4px 8px', fontSize: 11, whiteSpace: 'nowrap' }}
+          onClick={toggle}
+        >
+          {option.available ? '停' : '開'}
+        </button>
+        <button
+          className="btn-danger"
+          style={{ padding: '4px 8px', fontSize: 11 }}
+          onClick={del}
+        >
+          ✕
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -693,6 +795,184 @@ function OptionRow({
       >
         ✕
       </button>
+    </div>
+  );
+}
+
+// 從既有菜單品項挑選，加成「連動加點」選項（名稱/價格跟菜單走）
+function MenuPicker({
+  groupId,
+  onChange,
+  onClose,
+}: {
+  groupId: number;
+  onChange: () => void;
+  onClose: () => void;
+}) {
+  const [cats, setCats] = useState<Category[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/admin/categories', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then(setCats)
+      .catch(() => {});
+  }, []);
+
+  async function add(variantId: number) {
+    setBusy(true);
+    await api('/api/admin/modifier-options', 'POST', {
+      groupId,
+      sourceVariantId: variantId,
+    });
+    setBusy(false);
+    onChange();
+  }
+
+  return (
+    <div
+      style={{
+        marginTop: 8,
+        padding: 8,
+        border: '1px dashed var(--brand)',
+        borderRadius: 8,
+        background: 'var(--brand-tint)',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 6,
+        }}
+      >
+        <strong style={{ fontSize: 13 }}>從菜單挑選加點品項</strong>
+        <button
+          className="btn-ghost"
+          style={{ padding: '2px 8px', fontSize: 12 }}
+          onClick={onClose}
+        >
+          完成
+        </button>
+      </div>
+      <div style={{ maxHeight: 240, overflowY: 'auto' }}>
+        {cats.map((c) => (
+          <div key={c.id} style={{ marginBottom: 6 }}>
+            <div style={{ fontSize: 11, color: '#999' }}>{c.name}</div>
+            {c.items.flatMap((it) =>
+              it.variants.map((v) => (
+                <button
+                  key={v.id}
+                  disabled={busy}
+                  onClick={() => add(v.id)}
+                  className="btn-ghost"
+                  style={{
+                    fontSize: 12,
+                    padding: '4px 8px',
+                    margin: '3px 4px 0 0',
+                  }}
+                >
+                  ＋ {it.name}
+                  {v.label ? `（${v.label}）` : ''} ${v.price}
+                </button>
+              ))
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 一鍵把這組設定套用到所選分類的所有品項（例如所有主餐）
+function ApplyPicker({
+  groupId,
+  onChange,
+  onClose,
+}: {
+  groupId: number;
+  onChange: () => void;
+  onClose: () => void;
+}) {
+  const [cats, setCats] = useState<Category[]>([]);
+  const [picked, setPicked] = useState<number[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/admin/categories', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then(setCats)
+      .catch(() => {});
+  }, []);
+
+  async function apply() {
+    if (picked.length === 0) return;
+    setBusy(true);
+    const res = await api(`/api/admin/modifier-groups/${groupId}/apply`, 'POST', {
+      categoryIds: picked,
+    });
+    setBusy(false);
+    if (res) {
+      alert(`已套用到 ${res.applied} 個品項`);
+      onChange();
+      onClose();
+    }
+  }
+
+  return (
+    <div
+      style={{
+        marginTop: 8,
+        padding: 8,
+        border: '1px dashed var(--brand)',
+        borderRadius: 8,
+        background: 'var(--brand-tint)',
+      }}
+    >
+      <strong style={{ fontSize: 13 }}>套用這組設定到分類（覆蓋同名群組）</strong>
+      <div style={{ marginTop: 6 }}>
+        {cats.map((c) => (
+          <label
+            key={c.id}
+            style={{
+              display: 'inline-flex',
+              gap: 4,
+              alignItems: 'center',
+              fontSize: 12,
+              marginRight: 12,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={picked.includes(c.id)}
+              onChange={(e) =>
+                setPicked((p) =>
+                  e.target.checked ? [...p, c.id] : p.filter((x) => x !== c.id)
+                )
+              }
+            />
+            {c.name}
+          </label>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+        <button
+          className="btn-primary"
+          style={{ padding: '4px 12px', fontSize: 12 }}
+          disabled={busy || picked.length === 0}
+          onClick={apply}
+        >
+          {busy ? '套用中…' : '套用'}
+        </button>
+        <button
+          className="btn-ghost"
+          style={{ padding: '4px 12px', fontSize: 12 }}
+          onClick={onClose}
+        >
+          取消
+        </button>
+      </div>
     </div>
   );
 }

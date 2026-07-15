@@ -25,6 +25,12 @@ export function taipeiDayBounds(ref: Date = new Date()): {
   return { start, end, key };
 }
 
+// 以台灣時區格式化日期時間供顯示（收據、出單、收班）。
+// 伺服器多半跑在 UTC，未指定時區時 toLocaleString 會顯示 UTC，故一律鎖 Asia/Taipei。
+export function formatTaipei(d: Date | string): string {
+  return new Date(d).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
+}
+
 // 未結帳訂單自動過期分鐘數（預設 10，可用環境變數覆寫）
 export function expireMinutes(): number {
   const v = Number(process.env.ORDER_EXPIRE_MINUTES);

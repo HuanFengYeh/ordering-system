@@ -165,6 +165,12 @@ export default function AdminOrdersPage() {
           <Link href="/admin/tables" style={{ color: '#fff' }}>
             桌號
           </Link>
+          <Link href="/admin/settings" style={{ color: '#fff' }}>
+            設定
+          </Link>
+          <Link href="/admin/help" style={{ color: '#fff' }}>
+            教學
+          </Link>
           <button
             className="btn-ghost"
             style={{ padding: '4px 10px' }}
