@@ -150,26 +150,28 @@ button {
 }
 
 /* 品項卡（Toast 式）：左方大圖 + 右方 名稱/描述/價格，右下角加入鈕 */
+/* 每個品項＝一張暖色框卡（框住，hover 才不會跟照片邊緣打架） */
 .item {
   position: relative;
   display: flex;
   gap: 14px;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--border);
-}
-.item:last-child {
-  border-bottom: none;
+  padding: 12px;
+  border: 1px solid #ece4d5;
+  border-radius: 16px;
+  margin-bottom: 10px;
+  background: #fffdf9;
+  transition: background 0.15s, border-color 0.15s;
 }
 .item.tappable {
   cursor: pointer;
 }
-/* 品項清單直接排在奶油底上（無白色外框，貼近 Toast） */
 .menu-list {
   margin-bottom: 4px;
 }
-/* 滑鼠 hover 回饋（觸控裝置無效，不影響手機） */
+/* 滑鼠 hover 回饋改暖色，且落在框卡內（觸控裝置無效，不影響手機） */
 .item.tappable:hover {
-  background: rgba(0, 0, 0, 0.025);
+  background: #fbf2e1;
+  border-color: #f0dfbe;
 }
 .catnav button:hover {
   color: var(--text);
@@ -178,7 +180,7 @@ button {
   background: var(--brand-tint);
 }
 .opt-line:hover:not(.disabled) {
-  background: rgba(0, 0, 0, 0.015);
+  background: #faf4ea;
 }
 .btn-primary:not(:disabled):hover,
 .btn-ok:hover,
@@ -198,7 +200,7 @@ button {
   border-radius: 12px;
   object-fit: cover;
   flex: 0 0 auto;
-  background: #f2f2f2;
+  background: #f3ede1;
 }
 .item-photo.placeholder {
   display: flex;
@@ -481,7 +483,7 @@ button {
   border-radius: 999px;
 }
 .btn-ghost {
-  background: #f0f0f0;
+  background: #efe8dc;
   color: var(--text);
   border-radius: 999px;
 }
