@@ -150,16 +150,16 @@ button {
 }
 
 /* 品項卡（Toast 式）：左方大圖 + 右方 名稱/描述/價格，右下角加入鈕 */
-/* 每個品項＝一張暖色框卡（框住，hover 才不會跟照片邊緣打架） */
+/* 每個品項＝框卡：只用暖色邊框框住、不填白底（維持奶油底），hover 才暖色填色 */
 .item {
   position: relative;
   display: flex;
   gap: 14px;
   padding: 12px;
-  border: 1px solid #ece4d5;
+  border: 1px solid #e6dcc7;
   border-radius: 16px;
   margin-bottom: 10px;
-  background: #fffdf9;
+  background: transparent;
   transition: background 0.15s, border-color 0.15s;
 }
 .item.tappable {
@@ -170,8 +170,8 @@ button {
 }
 /* 滑鼠 hover 回饋改暖色，且落在框卡內（觸控裝置無效，不影響手機） */
 .item.tappable:hover {
-  background: #fbf2e1;
-  border-color: #f0dfbe;
+  background: #f7edda;
+  border-color: #ecdcb8;
 }
 .catnav button:hover {
   color: var(--text);
@@ -212,7 +212,7 @@ button {
 .item-body {
   flex: 1;
   min-width: 0;
-  padding-right: 44px; /* 留白給右下角的加入鈕 */
+  padding-right: 40px; /* 留白給右下角的加入鈕（鈕已內縮 12px） */
 }
 .item-name {
   font-weight: 700;
@@ -239,7 +239,7 @@ button {
 /* 右下角加入鈕（安靜的圓形，取代原本大顆橘色「選擇」pill） */
 .item-add {
   position: absolute;
-  right: 0;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   width: 34px;
@@ -262,7 +262,7 @@ button {
 }
 .item-stepper {
   position: absolute;
-  right: 0;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
