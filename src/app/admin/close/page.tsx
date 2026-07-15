@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { RESTAURANT_NAME } from '@/lib/config';
@@ -24,33 +24,62 @@ export default function AdminClosePage() {
   const [today, setToday] = useState<DaySummary | null>(null);
   const [todayClose, setTodayClose] = useState<Close | null>(null);
   const [history, setHistory] = useState<Close[]>([]);
-  const [loading, setLoading] = useState(true);
   const [closing, setClosing] = useState(false);
 
-  const load = useCallback(async () => {
-    const res = await fetch('/api/admin/close', { cache: 'no-store' });
-    if (res.status === 401) {
-      router.replace('/admin/login?next=/admin/close');
-      return;
-    }
-    const d = await res.json();
-    setToday(d.today);
-    setTodayClose(d.todayClose);
-    setHistory(d.history);
-    setLoading(false);
-  }, [router]);
+  // 老闆 PIN 關卡：解鎖前不顯示任何營業額
+  const [pin, setPin] = useState('');
+  const [unlocked, setUnlocked] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [pinError, setPinError] = useState('');
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // 帶老闆 PIN 抓資料；PIN 只留在記憶體，重整需重輸
+  const load = useCallback(
+    async (ownerPin: string) => {
+      const res = await fetch('/api/admin/close', {
+        cache: 'no-store',
+        headers: { 'x-owner-pin': ownerPin },
+      });
+      if (res.status === 401) {
+        router.replace('/admin/login?next=/admin/close');
+        return false;
+      }
+      if (res.status === 403) {
+        setPinError('PIN 錯誤');
+        setUnlocked(false);
+        return false;
+      }
+      const d = await res.json();
+      setToday(d.today);
+      setTodayClose(d.todayClose);
+      setHistory(d.history);
+      setUnlocked(true);
+      setPinError('');
+      return true;
+    },
+    [router]
+  );
+
+  async function unlock(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pin) return;
+    setChecking(true);
+    try {
+      await load(pin);
+    } finally {
+      setChecking(false);
+    }
+  }
 
   async function doClose() {
     if (!confirm('確定收班並記錄今日營業總結？（之後仍可重新收班更新數字）')) return;
     setClosing(true);
     try {
-      const res = await fetch('/api/admin/close', { method: 'POST' });
+      const res = await fetch('/api/admin/close', {
+        method: 'POST',
+        headers: { 'x-owner-pin': pin },
+      });
       if (!res.ok) alert('收班失敗');
-      await load();
+      await load(pin);
     } finally {
       setClosing(false);
     }
@@ -71,8 +100,38 @@ export default function AdminClosePage() {
       </div>
 
       <div className="container">
-        {loading || !today ? (
-          <div className="empty">載入中…</div>
+        {!unlocked || !today ? (
+          <div className="card" style={{ maxWidth: 360, margin: '40px auto' }}>
+            <h2 style={{ marginTop: 0, textAlign: 'center' }}>🔒 老闆專區</h2>
+            <p style={{ color: '#888', fontSize: 13, textAlign: 'center' }}>
+              營業額與收班為老闆專用，請輸入老闆 PIN
+            </p>
+            <form onSubmit={unlock}>
+              <input
+                className="textarea"
+                type="password"
+                inputMode="numeric"
+                placeholder="老闆 PIN"
+                value={pin}
+                autoFocus
+                onChange={(e) => setPin(e.target.value)}
+                style={{ marginBottom: 10 }}
+              />
+              {pinError && (
+                <div style={{ color: 'var(--danger)', marginBottom: 10 }}>
+                  {pinError}
+                </div>
+              )}
+              <button
+                className="btn-primary"
+                style={{ width: '100%' }}
+                disabled={checking || !pin}
+                type="submit"
+              >
+                {checking ? '驗證中…' : '解鎖'}
+              </button>
+            </form>
+          </div>
         ) : (
           <>
             {/* 今日日結單（可列印） */}
