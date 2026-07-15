@@ -3,7 +3,7 @@
 import { useEffect, useState, type ChangeEvent } from 'react';
 import Link from 'next/link';
 import { RESTAURANT_NAME } from '@/lib/config';
-import { IconDish } from '@/app/icons';
+import { IconDish, IconLink } from '@/app/icons';
 
 type Variant = { id: number; label: string; price: number };
 type ModOption = {
@@ -121,7 +121,7 @@ export default function AdminMenuPage() {
 
       <div className="container">
         <h2 style={{ marginBottom: 4 }}>菜單管理</h2>
-        <p style={{ color: '#888', fontSize: 13, marginTop: 0 }}>
+        <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 0 }}>
           停售的品項客人端不會顯示。已被訂單使用的品項/規格無法刪除，請改為停售。
         </p>
 
@@ -348,7 +348,7 @@ function ItemBlock({ item, onChange }: { item: Item; onChange: () => void }) {
               height: 56,
               objectFit: 'cover',
               borderRadius: 8,
-              background: '#f2f2f2',
+              background: '#f3ede1',
             }}
           />
         ) : (
@@ -357,7 +357,7 @@ function ItemBlock({ item, onChange }: { item: Item; onChange: () => void }) {
               width: 56,
               height: 56,
               borderRadius: 8,
-              background: '#f2f2f2',
+              background: '#f3ede1',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -631,13 +631,20 @@ function GroupBlock({
       <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
         <button
           className="btn-ghost"
-          style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
+          style={{
+            padding: '5px 10px',
+            fontSize: 12,
+            whiteSpace: 'nowrap',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
           onClick={() => {
             setShowPicker((v) => !v);
             setShowApply(false);
           }}
         >
-          🔗 從菜單挑選
+          <IconLink size={13} /> 從菜單挑選
         </button>
         <button
           className="btn-ghost"
@@ -720,8 +727,17 @@ function OptionRow({
           opacity: option.available && !gone ? 1 : 0.45,
         }}
       >
-        <span style={{ fontSize: 12, flex: 1 }}>
-          🔗 {name}{' '}
+        <span
+          style={{
+            fontSize: 12,
+            flex: 1,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            flexWrap: 'wrap',
+          }}
+        >
+          <IconLink size={12} /> {name}{' '}
           <span style={{ color: 'var(--brand-dark)', fontWeight: 700 }}>
             +${price}
           </span>
@@ -772,7 +788,7 @@ function OptionRow({
         onBlur={save}
         style={{ fontSize: 12 }}
       />
-      <span style={{ color: '#888', fontSize: 12 }}>+$</span>
+      <span style={{ color: 'var(--muted)', fontSize: 12 }}>+$</span>
       <input
         className="textarea"
         inputMode="numeric"
@@ -1020,7 +1036,7 @@ function VariantRow({
         onBlur={save}
         style={{ fontSize: 13 }}
       />
-      <span style={{ color: '#888' }}>$</span>
+      <span style={{ color: 'var(--muted)' }}>$</span>
       <input
         className="textarea"
         value={price}

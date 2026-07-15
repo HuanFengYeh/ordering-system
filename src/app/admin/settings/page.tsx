@@ -4,6 +4,13 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { RESTAURANT_NAME } from '@/lib/config';
+import {
+  IconCheck,
+  IconKey,
+  IconLock,
+  IconPrinter,
+  IconWarn,
+} from '@/app/icons';
 
 type Settings = {
   printMode: 'browser' | 'cloudprnt' | 'both';
@@ -77,7 +84,7 @@ export default function AdminSettingsPage() {
 
       <div className="container">
         <h2 style={{ marginBottom: 4 }}>設定</h2>
-        <p style={{ color: '#888', fontSize: 13, marginTop: 0 }}>
+        <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 0 }}>
           出單方式、密碼與老闆 PIN 都可在這裡調整，改完立即生效。
         </p>
 
@@ -87,9 +94,12 @@ export default function AdminSettingsPage() {
             style={{
               color: msg.ok ? 'var(--ok)' : 'var(--danger)',
               fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
             }}
           >
-            {msg.ok ? '✅ ' : '⚠️ '}
+            {msg.ok ? <IconCheck size={16} /> : <IconWarn size={16} />}
             {msg.text}
           </div>
         )}
@@ -118,7 +128,16 @@ function PrinterCard({
   const [copied, setCopied] = useState(false);
   return (
     <div className="card">
-      <h3 style={{ marginTop: 0 }}>🖨️ 出單機</h3>
+      <h3
+        style={{
+          marginTop: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        <IconPrinter size={18} /> 出單機
+      </h3>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {PRINT_MODES.map((m) => (
           <button
@@ -147,7 +166,7 @@ function PrinterCard({
           <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
             出單機設定網址
           </div>
-          <p style={{ color: '#888', fontSize: 12, margin: '0 0 8px' }}>
+          <p style={{ color: 'var(--muted)', fontSize: 12, margin: '0 0 8px' }}>
             在 Star CloudPRNT 印表機的設定裡，把「server URL」填成下面這串：
           </p>
           <div
@@ -190,8 +209,17 @@ function AdminPwCard({
   const [next, setNext] = useState('');
   return (
     <div className="card">
-      <h3 style={{ marginTop: 0 }}>🔑 換櫃檯密碼</h3>
-      <p style={{ color: '#888', fontSize: 12, marginTop: 0 }}>
+      <h3
+        style={{
+          marginTop: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        <IconKey size={18} /> 換櫃檯密碼
+      </h3>
+      <p style={{ color: 'var(--muted)', fontSize: 12, marginTop: 0 }}>
         員工登入櫃檯後台用的密碼。
       </p>
       <input
@@ -241,8 +269,17 @@ function OwnerPinCard({
   const [next, setNext] = useState('');
   return (
     <div className="card">
-      <h3 style={{ marginTop: 0 }}>🔒 換老闆 PIN</h3>
-      <p style={{ color: '#888', fontSize: 12, marginTop: 0 }}>
+      <h3
+        style={{
+          marginTop: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        <IconLock size={18} /> 換老闆 PIN
+      </h3>
+      <p style={{ color: 'var(--muted)', fontSize: 12, marginTop: 0 }}>
         看營業額、收班用的 PIN（員工不知道就看不到營業額）。
         {!s.ownerPinSet && ' 目前尚未設定，設定後才能進收班頁。'}
       </p>

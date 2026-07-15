@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { RESTAURANT_NAME } from '@/lib/config';
 import { formatTaipei } from '@/lib/businessDay';
+import { IconLock, IconWarn } from '@/app/icons';
 import type { DaySummary } from '@/lib/types';
 
 type Close = {
@@ -103,8 +104,18 @@ export default function AdminClosePage() {
       <div className="container">
         {!unlocked || !today ? (
           <div className="card" style={{ maxWidth: 360, margin: '40px auto' }}>
-            <h2 style={{ marginTop: 0, textAlign: 'center' }}>🔒 老闆專區</h2>
-            <p style={{ color: '#888', fontSize: 13, textAlign: 'center' }}>
+            <h2
+              style={{
+                marginTop: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+              }}
+            >
+              <IconLock size={18} /> 老闆專區
+            </h2>
+            <p style={{ color: 'var(--muted)', fontSize: 13, textAlign: 'center' }}>
               營業額與收班為老闆專用，請輸入老闆 PIN
             </p>
             <form onSubmit={unlock}>
@@ -140,7 +151,7 @@ export default function AdminClosePage() {
               <h2 style={{ margin: '0 0 4px', textAlign: 'center' }}>
                 {RESTAURANT_NAME} 日結單
               </h2>
-              <div style={{ textAlign: 'center', color: '#888', fontSize: 13 }}>
+              <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
                 營業日 {today.businessDate}
                 {todayClose && (
                   <>
@@ -169,9 +180,21 @@ export default function AdminClosePage() {
             </div>
 
             {today.unpaidCount > 0 && (
-              <div className="card no-print" style={{ color: 'var(--danger)', fontSize: 14 }}>
-                ⚠️ 還有 {today.unpaidCount} 張未結帳。收班會先把逾時未結的單自動作廢；
-                若有客人還沒結，請先去「訂單」處理完再收班。
+              <div
+                className="card no-print"
+                style={{
+                  color: 'var(--danger)',
+                  fontSize: 14,
+                  display: 'flex',
+                  gap: 8,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <IconWarn size={18} style={{ flex: '0 0 auto', marginTop: 1 }} />
+                <span>
+                  還有 {today.unpaidCount} 張未結帳。收班會先把逾時未結的單自動作廢；
+                  若有客人還沒結，請先去「訂單」處理完再收班。
+                </span>
               </div>
             )}
 
@@ -194,7 +217,7 @@ export default function AdminClosePage() {
                   <div key={h.id} className="order-line" style={{ padding: '8px 0' }}>
                     <span>
                       <strong>{h.businessDate}</strong>{' '}
-                      <span style={{ color: '#888', fontSize: 12 }}>
+                      <span style={{ color: 'var(--muted)', fontSize: 12 }}>
                         （{h.orderCount} 單 · 內用 {h.dineInCount} / 外帶 {h.takeoutCount}）
                       </span>
                     </span>

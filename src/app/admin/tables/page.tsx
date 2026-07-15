@@ -105,7 +105,7 @@ export default function AdminTablesPage() {
               <div key={t.id} className="variant-row">
                 <div>
                   <strong>桌 {t.number}</strong>
-                  <div style={{ fontSize: 12, color: '#888' }}>
+                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>
                     /order/{t.token}
                   </div>
                 </div>

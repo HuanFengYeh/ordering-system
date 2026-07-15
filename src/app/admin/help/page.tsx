@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { RESTAURANT_NAME } from '@/lib/config';
+import { IconBell, IconInfo, IconWarn } from '@/app/icons';
 
 // 後台內建操作教學。純靜態內容，給櫃檯/店長隨時查。
 export default function AdminHelpPage() {
@@ -21,7 +22,7 @@ export default function AdminHelpPage() {
 
       <div className="container">
         <h2 style={{ marginBottom: 2 }}>操作教學</h2>
-        <p style={{ color: '#888', fontSize: 13, marginTop: 0 }}>
+        <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 0 }}>
           給櫃檯與外場的日常操作指南。點右上「設定」可改密碼與出單機。
         </p>
 
@@ -47,7 +48,9 @@ export default function AdminHelpPage() {
           <ul className="help-ul">
             <li>登入櫃檯後台（輸入櫃檯密碼）。</li>
             <li>
-              按右上角 🔔 <b>提示音開關</b>打開它，新單進來才會「嗶」。
+              按右上角{' '}
+              <IconBell size={14} style={{ verticalAlign: '-2px' }} />{' '}
+              <b>提示音開關</b>打開它，新單進來才會「嗶」。
             </li>
           </ul>
           <p style={{ fontWeight: 700, margin: '12px 0 4px' }}>有客人結帳時</p>
@@ -129,7 +132,7 @@ export default function AdminHelpPage() {
         <Section title="常見問題">
           <Qa
             q="新訂單沒聲音？"
-            a="按一次右上角 🔔 開關。每次重新整理頁面後要再開一次（瀏覽器限制）。"
+            a="按一次右上角的提示音（鈴鐺）開關。每次重新整理頁面後要再開一次（瀏覽器限制）。"
           />
           <Qa
             q="單子不見了？"
@@ -187,7 +190,7 @@ function Steps({ items }: { items: [string, string][] }) {
         <li key={i} style={{ margin: '7px 0' }}>
           <b style={{ fontSize: 14.5 }}>{t}</b>
           {h && (
-            <div style={{ color: '#888', fontSize: 13 }}>{h}</div>
+            <div style={{ color: 'var(--muted)', fontSize: 13 }}>{h}</div>
           )}
         </li>
       ))}
@@ -211,10 +214,15 @@ function Callout({
         fontSize: 14,
         background: warn ? '#fbf1d8' : '#fff3e0',
         border: `1px solid ${warn ? '#e6cf8f' : '#f6d9ac'}`,
+        display: 'flex',
+        gap: 8,
+        alignItems: 'flex-start',
       }}
     >
-      {warn ? '⏱️ ' : '💡 '}
-      {children}
+      <span style={{ flex: '0 0 auto', marginTop: 1 }}>
+        {warn ? <IconWarn size={16} /> : <IconInfo size={16} />}
+      </span>
+      <span>{children}</span>
     </div>
   );
 }
@@ -223,7 +231,7 @@ function Qa({ q, a }: { q: string; a: string }) {
   return (
     <div style={{ padding: '10px 0', borderTop: '1px solid var(--border, #eee)' }}>
       <div style={{ fontWeight: 700 }}>{q}</div>
-      <div style={{ color: '#888', fontSize: 14 }}>{a}</div>
+      <div style={{ color: 'var(--muted)', fontSize: 14 }}>{a}</div>
     </div>
   );
 }

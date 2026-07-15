@@ -89,6 +89,70 @@ export function IconSearch({ size = 20, style, className }: IconProps) {
   );
 }
 
+// 鎖（老闆專區/安全）
+export function IconLock({ size = 20, style, className }: IconProps) {
+  return (
+    <svg {...base(size)} style={style} className={className} aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+// 鑰匙（PIN / 密碼）
+export function IconKey({ size = 20, style, className }: IconProps) {
+  return (
+    <svg {...base(size)} style={style} className={className} aria-hidden="true">
+      <circle cx="7.5" cy="15.5" r="5.5" />
+      <path d="m21 2-9.6 9.6" />
+      <path d="m15.5 7.5 3 3L22 7l-3-3" />
+    </svg>
+  );
+}
+
+// 警告（三角驚嘆號）
+export function IconWarn({ size = 20, style, className }: IconProps) {
+  return (
+    <svg {...base(size)} style={style} className={className} aria-hidden="true">
+      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+    </svg>
+  );
+}
+
+// 印表機（出單機設定）
+export function IconPrinter({ size = 20, style, className }: IconProps) {
+  return (
+    <svg {...base(size)} style={style} className={className} aria-hidden="true">
+      <path d="M6 9V2h12v7" />
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <rect x="6" y="14" width="12" height="8" />
+    </svg>
+  );
+}
+
+// 資訊 / 提示
+export function IconInfo({ size = 20, style, className }: IconProps) {
+  return (
+    <svg {...base(size)} style={style} className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4" />
+      <path d="M12 8h.01" />
+    </svg>
+  );
+}
+
+// 連結（連動菜單品項）
+export function IconLink({ size = 20, style, className }: IconProps) {
+  return (
+    <svg {...base(size)} style={style} className={className} aria-hidden="true">
+      <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7L12 5" />
+      <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5" />
+    </svg>
+  );
+}
+
 // 餐點佔位（後台無照片時）
 export function IconDish({ size = 20, style, className }: IconProps) {
   return (

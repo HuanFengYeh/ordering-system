@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { RESTAURANT_NAME } from '@/lib/config';
 import type { Order, DaySummary } from '@/lib/types';
-import { IconBell } from '@/app/icons';
+import { IconBell, IconDineIn, IconTakeout } from '@/app/icons';
 
 const TABS = [
   { key: 'SUBMITTED', label: '待結帳' },
@@ -218,7 +218,9 @@ export default function AdminOrdersPage() {
                 ...(flashIds.includes(o.id)
                   ? { outline: '3px solid var(--brand)' }
                   : {}),
-                ...(o.status === 'CANCELLED' ? { opacity: 0.6 } : {}),
+                ...(o.status === 'CANCELLED'
+                  ? { background: '#f3efe6' }
+                  : {}),
               }}
             >
               <div className="order-head">
@@ -227,10 +229,24 @@ export default function AdminOrdersPage() {
                     className="badge"
                     style={{
                       marginRight: 6,
-                      background: o.orderType === 'TAKEOUT' ? '#e3f2fd' : '#f3e5f5',
-                      color: o.orderType === 'TAKEOUT' ? '#1565c0' : '#7b1fa2',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      background:
+                        o.orderType === 'TAKEOUT'
+                          ? '#efe8dc'
+                          : 'var(--brand-tint)',
+                      color:
+                        o.orderType === 'TAKEOUT'
+                          ? '#6b6459'
+                          : 'var(--brand-dark)',
                     }}
                   >
+                    {o.orderType === 'TAKEOUT' ? (
+                      <IconTakeout size={12} />
+                    ) : (
+                      <IconDineIn size={12} />
+                    )}
                     {o.orderType === 'TAKEOUT' ? '外帶' : '內用'}
                   </span>
                   <strong>
@@ -238,7 +254,7 @@ export default function AdminOrdersPage() {
                       ? o.pickupName || '外帶'
                       : `桌 ${o.table?.number ?? '-'}`}
                   </strong>{' '}
-                  <span style={{ color: '#888' }}>#{o.id}</span>
+                  <span style={{ color: 'var(--muted)' }}>#{o.id}</span>
                   {flashIds.includes(o.id) && (
                     <span className="badge submitted" style={{ marginLeft: 8 }}>
                       新訂單！
@@ -326,9 +342,15 @@ export default function AdminOrdersPage() {
                     還原
                   </button>
                 )}
-                <Link className="btn-ghost" href={`/print/${o.id}`} target="_blank">
-                  列印
-                </Link>
+                {o.status !== 'CANCELLED' && (
+                  <Link
+                    className="btn-ghost"
+                    href={`/print/${o.id}`}
+                    target="_blank"
+                  >
+                    列印
+                  </Link>
+                )}
               </div>
             </div>
           ))
@@ -351,7 +373,7 @@ function Stat({
 }) {
   return (
     <div style={{ minWidth: 90 }}>
-      <div style={{ fontSize: 12, color: '#888' }}>{label}</div>
+      <div style={{ fontSize: 12, color: 'var(--muted)' }}>{label}</div>
       <div
         style={{
           fontSize: big ? 24 : 18,
