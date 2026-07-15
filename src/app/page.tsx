@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { RESTAURANT_NAME, RESTAURANT_SUBTITLE } from '@/lib/config';
 
+// 桌位清單即時變動，不可靜態快取
+export const dynamic = 'force-dynamic';
+
 // 首頁：開發 / 展示用入口。實務上客人是掃 QR 直接進 /order/[token]。
 export default async function Home() {
   const tables = await prisma.table.findMany({ orderBy: { number: 'asc' } });
