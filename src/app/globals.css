@@ -156,6 +156,7 @@ button {
 .item {
   position: relative;
   display: flex;
+  align-items: center; /* 文字區塊對齊照片垂直置中，短品項不會卡在上緣 */
   gap: 14px;
   padding: 14px 8px;
   margin: 0 -8px; /* hover 底色左右各多一點，內容仍對齊 */
@@ -240,10 +241,12 @@ button {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* 價格：比照 Toast，深色、一般字重、位於描述下方留白 */
 .item-price {
-  font-weight: 600;
+  font-weight: 500;
   font-size: 15px;
   color: var(--text);
+  margin-top: 6px;
   font-variant-numeric: tabular-nums;
 }
 /* 右下角加入鈕：無底色無邊框，只留橘色「＋」（不搶戲） */

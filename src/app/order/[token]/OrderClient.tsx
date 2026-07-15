@@ -364,8 +364,7 @@ export default function OrderClient({
                 const minPrice = Math.min(
                   ...item.variants.map((v) => v.price)
                 );
-                const priceLabel =
-                  item.variants.length > 1 ? `$${minPrice} 起` : `$${minPrice}`;
+                const priceLabel = `$${minPrice}`;
                 const simple = item.variants[0];
                 const simpleQty = needsModal
                   ? 0
