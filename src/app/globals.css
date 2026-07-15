@@ -33,6 +33,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  /* 手機點觸不要預設的灰色高亮，改用自訂 :active 暖色回饋 */
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* 金額/數字一律等寬對齊，價格排列更整齊、更專業 */
@@ -175,8 +177,9 @@ button {
 .menu-list {
   margin-bottom: 4px;
 }
-/* hover：明顯的暖色一整列（對齊 Toast） */
-.item.tappable:hover {
+/* hover（滑鼠）＋ active（手機點觸）：明顯的暖色一整列（對齊 Toast） */
+.item.tappable:hover,
+.item.tappable:active {
   background: #f4e4bf;
 }
 .catnav button:hover {
@@ -185,7 +188,8 @@ button {
 .item-add:hover {
   background: var(--brand-tint);
 }
-.opt-line:hover:not(.disabled) {
+.opt-line:hover:not(.disabled),
+.opt-line:active:not(.disabled) {
   background: #faf4ea;
 }
 .btn-primary:not(:disabled):hover,
@@ -242,29 +246,32 @@ button {
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
-/* 右下角加入鈕（安靜的圓形，取代原本大顆橘色「選擇」pill） */
+/* 右下角加入鈕：無底色無邊框，只留橘色「＋」（不搶戲） */
 .item-add {
   position: absolute;
-  right: 12px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 999px;
-  background: #fff;
-  border: 1.6px solid var(--brand);
+  background: transparent;
+  border: none;
   color: var(--brand);
-  font-size: 20px;
+  font-size: 30px;
   font-weight: 700;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
 }
+/* 已在購物車：以實心橘圓＋數字標示（有狀態才出現底色） */
 .item-add.filled {
   background: var(--brand);
   color: #fff;
   font-size: 15px;
+  width: 30px;
+  height: 30px;
 }
 .item-stepper {
   position: absolute;
@@ -498,6 +505,29 @@ button {
   height: 88px;
 }
 
+/* 內用/外帶分段切換：選中才深色（與分類分頁、系統選中狀態一致） */
+.seg {
+  flex: 1;
+  padding: 12px 0;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #efe8dc;
+  color: #8a827a;
+  transition: background 0.15s, color 0.15s;
+}
+.seg.active {
+  background: var(--text);
+  color: #fff;
+}
+.seg:not(.active):hover {
+  background: #e7ded0;
+}
+
 /* 客製品項：菜單列右側「選擇」按鈕 */
 .btn-choose {
   background: var(--brand);
@@ -661,8 +691,8 @@ button {
   border-radius: 6px;
 }
 .opt-line.sel .ctrl {
-  border-color: var(--brand);
-  background: var(--brand);
+  border-color: var(--text);
+  background: var(--text);
 }
 .opt-line.sel .ctrl.radio {
   box-shadow: inset 0 0 0 3.5px #fff;
@@ -740,7 +770,7 @@ button {
   border-radius: 999px;
 }
 .tabs button.active {
-  background: var(--brand);
+  background: var(--text);
   color: #fff;
 }
 

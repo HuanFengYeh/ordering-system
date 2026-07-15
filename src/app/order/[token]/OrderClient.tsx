@@ -312,16 +312,7 @@ export default function OrderClient({
               <button
                 key={opt.key}
                 onClick={() => setOrderType(opt.key)}
-                className={orderType === opt.key ? 'btn-primary' : 'btn-ghost'}
-                style={{
-                  flex: 1,
-                  padding: '12px 0',
-                  fontSize: 16,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                }}
+                className={orderType === opt.key ? 'seg active' : 'seg'}
               >
                 <opt.Icon size={20} />
                 {opt.label}
