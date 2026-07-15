@@ -4,11 +4,28 @@ export type Variant = {
   price: number;
 };
 
+export type ModifierOption = {
+  id: number;
+  label: string;
+  priceDelta: number;
+};
+
+export type ModifierGroup = {
+  id: number;
+  name: string;
+  required: boolean;
+  minSelect: number;
+  maxSelect: number;
+  options: ModifierOption[];
+};
+
 export type MenuItem = {
   id: number;
   name: string;
   description: string | null;
+  imageUrl: string | null;
   variants: Variant[];
+  modifierGroups: ModifierGroup[];
 };
 
 export type Category = {
@@ -18,6 +35,13 @@ export type Category = {
   items: MenuItem[];
 };
 
+export type OrderItemModifier = {
+  id: number;
+  groupName: string;
+  label: string;
+  priceDelta: number;
+};
+
 export type OrderItem = {
   id: number;
   itemName: string;
@@ -25,6 +49,7 @@ export type OrderItem = {
   price: number;
   quantity: number;
   note: string | null;
+  modifiers: OrderItemModifier[];
 };
 
 export type Order = {

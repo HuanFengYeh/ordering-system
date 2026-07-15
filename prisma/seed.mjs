@@ -8,23 +8,78 @@ function token() {
   return crypto.randomBytes(8).toString('hex');
 }
 
+// 客製選項群組樣板（demo）。options 為 [label, priceDelta] 陣列。
+// required + max=1 → 單選必填；required=false + max>1 → 可複選加料。
+const SPICE = {
+  name: '辣度',
+  required: true,
+  min: 1,
+  max: 1,
+  options: [
+    ['不辣', 0],
+    ['小辣', 0],
+    ['中辣', 0],
+    ['大辣', 0],
+  ],
+};
+const ADDON = {
+  name: '加料',
+  required: false,
+  min: 0,
+  max: 3,
+  options: [
+    ['加溏心蛋', 15],
+    ['加起司', 25],
+    ['加麵', 20],
+    ['加青菜', 15],
+  ],
+};
+// 火鍋料：四種肉都附火鍋料，客人可選擇維持、換成蔬菜、或不要。
+// ⚠️ 選項與加價為預設值，實際請依店家調整（可在後台改）
+const HOTPOT = {
+  name: '火鍋料',
+  required: false,
+  min: 0,
+  max: 1,
+  options: [
+    ['換蔬菜', 0],
+    ['換肉', 0],
+    ['不要火鍋料', 0],
+  ],
+};
+// 依「分類名稱」套用客製群組到該分類的所有品項（demo 用；正式可在後台逐項設定）
+const CATEGORY_MODIFIERS = {
+  暖胃鍋品: [SPICE, HOTPOT, ADDON],
+  招牌湯麵: [ADDON],
+  經典炒麵: [SPICE, ADDON],
+};
+
+// 麵體讓客人單獨選：意麵/雞絲/河粉/冬粉同價，讚岐烏龍加價
+const noodles = (base, tsuru) => [
+  ['意麵', base],
+  ['雞絲', base],
+  ['河粉', base],
+  ['冬粉', base],
+  ['讚岐烏龍', tsuru],
+];
+
 // 菜單資料。每個 item 的 variants 是 [label, price] 陣列。
 // 單一價格的菜色 label 用空字串 ''。
 const MENU = [
   {
     name: '招牌湯麵',
-    note: '意麵、雞絲、河粉、冬粉四款麵體同價；讚岐烏龍需加價',
+    note: '麵體可單獨選；讚岐烏龍需加價',
     items: [
-      { name: '炸雞排湯麵', variants: [['意麵/雞絲/河粉/冬粉', 140], ['讚岐烏龍', 155]] },
-      { name: '味噌湯麵', variants: [['意麵/雞絲/河粉/冬粉', 120], ['讚岐烏龍', 135]] },
-      { name: '泡菜湯麵', variants: [['意麵/雞絲/河粉/冬粉', 135], ['讚岐烏龍', 150]] },
-      { name: '醬油湯麵', variants: [['意麵/雞絲/河粉/冬粉', 120], ['讚岐烏龍', 135]] },
-      { name: '原味湯麵', variants: [['意麵/雞絲/河粉/冬粉', 115], ['讚岐烏龍', 130]] },
+      { name: '炸雞排湯麵', variants: noodles(140, 155) },
+      { name: '味噌湯麵', variants: noodles(120, 135) },
+      { name: '泡菜湯麵', variants: noodles(135, 150) },
+      { name: '醬油湯麵', variants: noodles(120, 135) },
+      { name: '原味湯麵', variants: noodles(115, 130) },
     ],
   },
   {
     name: '暖胃鍋品',
-    note: '「雞排」品項為不加火鍋料、直接換肉',
+    note: '豬肉／鯛魚／牛肉／雞排四種肉任選；火鍋料可另選換蔬菜、換肉或不要',
     items: [
       { name: '壽喜燒火鍋', variants: [['豬肉', 190], ['鯛魚', 200], ['牛肉', 210], ['雞排', 235]] },
       { name: '原味小火鍋', variants: [['豬肉', 190], ['鯛魚', 200], ['牛肉', 210], ['雞排', 235]] },
@@ -120,8 +175,11 @@ const MENU = [
 
 async function main() {
   // 清空（保持可重複執行）
+  await prisma.orderItemModifier.deleteMany();
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
+  await prisma.modifierOption.deleteMany();
+  await prisma.modifierGroup.deleteMany();
   await prisma.variant.deleteMany();
   await prisma.menuItem.deleteMany();
   await prisma.category.deleteMany();
@@ -138,6 +196,7 @@ async function main() {
     const category = await prisma.category.create({
       data: { name: cat.name, note: cat.note ?? null, sort: catSort++ },
     });
+    const mods = CATEGORY_MODIFIERS[cat.name] ?? [];
     let itemSort = 0;
     for (const item of cat.items) {
       await prisma.menuItem.create({
@@ -151,6 +210,22 @@ async function main() {
               label,
               price,
               sort: i,
+            })),
+          },
+          modifierGroups: {
+            create: mods.map((g, gi) => ({
+              name: g.name,
+              required: g.required,
+              minSelect: g.min,
+              maxSelect: g.max,
+              sort: gi,
+              options: {
+                create: g.options.map(([label, priceDelta], oi) => ({
+                  label,
+                  priceDelta,
+                  sort: oi,
+                })),
+              },
             })),
           },
         },

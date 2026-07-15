@@ -9,7 +9,19 @@ export async function getCustomerMenu(): Promise<Category[]> {
       items: {
         where: { available: true },
         orderBy: { sort: 'asc' },
-        include: { variants: { orderBy: { sort: 'asc' } } },
+        include: {
+          variants: { orderBy: { sort: 'asc' } },
+          modifierGroups: {
+            orderBy: { sort: 'asc' },
+            include: {
+              // 只給客人看仍在供應的選項
+              options: {
+                where: { available: true },
+                orderBy: { sort: 'asc' },
+              },
+            },
+          },
+        },
       },
     },
   });

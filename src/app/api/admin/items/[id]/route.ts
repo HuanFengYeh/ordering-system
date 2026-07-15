@@ -6,7 +6,14 @@ export async function PATCH(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const { name, description, available } = await req.json();
+  const { name, description, available, imageUrl } = await req.json();
+  // 照片以 data URL 存於 DB；過大則拒絕（前端已壓縮，這裡設 1.5MB 上限保險）
+  if (typeof imageUrl === 'string' && imageUrl.length > 1_500_000) {
+    return NextResponse.json(
+      { error: '照片太大，請換較小的圖片' },
+      { status: 413 }
+    );
+  }
   const item = await prisma.menuItem.update({
     where: { id: Number(params.id) },
     data: {
@@ -15,6 +22,9 @@ export async function PATCH(
         ? { description: String(description).trim() || null }
         : {}),
       ...(available !== undefined ? { available: Boolean(available) } : {}),
+      ...(imageUrl !== undefined
+        ? { imageUrl: imageUrl ? String(imageUrl) : null }
+        : {}),
     },
   });
   return NextResponse.json(item);

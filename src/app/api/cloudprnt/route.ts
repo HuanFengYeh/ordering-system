@@ -26,7 +26,7 @@ async function nextJob() {
   return prisma.order.findFirst({
     where: { printQueued: true, printedAt: null },
     orderBy: { paidAt: 'asc' },
-    include: { table: { select: { number: true } }, items: true },
+    include: { table: { select: { number: true } }, items: { include: { modifiers: true } } },
   });
 }
 
@@ -53,7 +53,7 @@ export async function GET(req: Request) {
   const job = token
     ? await prisma.order.findUnique({
         where: { id: Number(token) },
-        include: { table: { select: { number: true } }, items: true },
+        include: { table: { select: { number: true } }, items: { include: { modifiers: true } } },
       })
     : await nextJob();
 

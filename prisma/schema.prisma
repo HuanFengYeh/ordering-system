@@ -30,14 +30,43 @@ model Category {
 
 // 單一菜色（可能含多個規格 / 變體）
 model MenuItem {
-  id          Int       @id @default(autoincrement())
+  id          Int             @id @default(autoincrement())
   name        String
   description String?
-  available   Boolean   @default(true)
-  sort        Int       @default(0)
+  // 品項照片。serverless 部署無持久檔案系統，故存為壓縮後的 data URL（base64）
+  imageUrl    String?
+  available   Boolean         @default(true)
+  sort        Int             @default(0)
   categoryId  Int
-  category    Category  @relation(fields: [categoryId], references: [id])
+  category    Category        @relation(fields: [categoryId], references: [id])
   variants    Variant[]
+  // 客製選項群組（辣度、加料…），套用於此菜色的所有規格
+  modifierGroups ModifierGroup[]
+}
+
+// 客製選項群組，例如「辣度」(必選、單選) 或「加料」(可選、可複選)
+model ModifierGroup {
+  id         Int      @id @default(autoincrement())
+  name       String // 群組名稱，例如「辣度」「加料」
+  required   Boolean  @default(false) // 是否必選
+  minSelect  Int      @default(0) // 最少選幾項
+  maxSelect  Int      @default(1) // 最多選幾項；1 = 單選(radio)、>1 = 複選(checkbox)
+  sort       Int      @default(0)
+  menuItemId Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  options    ModifierOption[]
+}
+
+// 群組內的單一選項，例如「大辣」「加起司 +20」
+model ModifierOption {
+  id         Int      @id @default(autoincrement())
+  label      String // 選項名稱，例如「不辣」「加起司」
+  priceDelta Int      @default(0) // 加價（元），0 = 不加價
+  available  Boolean  @default(true)
+  sort       Int      @default(0)
+  groupId    Int
+  group      ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  orderItemModifiers OrderItemModifier[]
 }
 
 // 菜色的規格 / 變體，價格掛在這裡
@@ -94,9 +123,24 @@ model OrderItem {
   variant      Variant  @relation(fields: [variantId], references: [id])
   itemName     String // 菜名快照
   variantLabel String // 規格快照
-  price        Int // 單價快照（元）
+  // 全含單價快照（元）：規格價 + 所有已選客製選項的加價
+  price        Int
   quantity     Int
   note         String? // 客人備註，例如「不要辣」
+  modifiers    OrderItemModifier[]
+}
+
+// 訂單明細的客製選項快照（名稱、加價皆為下單當下記錄，改菜單不影響歷史）
+model OrderItemModifier {
+  id          Int      @id @default(autoincrement())
+  orderItemId Int
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  // 保留原選項參照（選項被刪時設為 null），顯示一律用下方快照欄位
+  optionId    Int?
+  option      ModifierOption? @relation(fields: [optionId], references: [id], onDelete: SetNull)
+  groupName   String // 群組名稱快照，例如「辣度」
+  label       String // 選項名稱快照，例如「大辣」
+  priceDelta  Int      @default(0) // 加價快照（元）
 }
 
 // 收班日結：打烊時記錄當日營業總結（以台灣時間的營業日為單位）

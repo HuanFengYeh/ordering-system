@@ -8,7 +8,13 @@ export async function GET() {
     include: {
       items: {
         orderBy: { sort: 'asc' },
-        include: { variants: { orderBy: { sort: 'asc' } } },
+        include: {
+          variants: { orderBy: { sort: 'asc' } },
+          modifierGroups: {
+            orderBy: { sort: 'asc' },
+            include: { options: { orderBy: { sort: 'asc' } } },
+          },
+        },
       },
     },
   });

@@ -12,7 +12,12 @@ export async function POST(req: Request) {
     token?: string;
     orderType?: string;
     pickupName?: string;
-    items?: { variantId?: number; quantity?: number; note?: string }[];
+    items?: {
+      variantId?: number;
+      quantity?: number;
+      note?: string;
+      modifierOptionIds?: number[];
+    }[];
   };
   try {
     body = await req.json();
@@ -42,11 +47,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: '內用需要桌號' }, { status: 400 });
   }
 
-  // 用資料庫的價格快照，不信任前端傳來的金額
+  // 用資料庫的價格快照，不信任前端傳來的金額；連同該菜色的客製群組/選項一起載入
   const variantIds = items.map((i) => Number(i.variantId));
   const variants = await prisma.variant.findMany({
     where: { id: { in: variantIds } },
-    include: { menuItem: true },
+    include: {
+      menuItem: {
+        include: {
+          modifierGroups: { include: { options: true } },
+        },
+      },
+    },
   });
   const variantMap = new Map(variants.map((v) => [v.id, v]));
 
@@ -61,14 +72,69 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    total += variant.price * quantity;
+
+    // 這一項合法的選項（只接受屬於本菜色、且仍供應的選項）
+    const groups = variant.menuItem.modifierGroups;
+    const optionById = new Map(
+      groups.flatMap((g) => g.options.map((o) => [o.id, { group: g, option: o }]))
+    );
+    const chosenIds = Array.from(
+      new Set((line.modifierOptionIds ?? []).map((n) => Number(n)))
+    );
+
+    // 選項必須屬於本菜色且仍供應
+    for (const id of chosenIds) {
+      const hit = optionById.get(id);
+      if (!hit || !hit.option.available) {
+        return NextResponse.json(
+          { error: `${variant.menuItem.name}：客製選項無效` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 逐群組檢查必選 / 最少 / 最多數量限制
+    for (const g of groups) {
+      const picked = chosenIds.filter(
+        (id) => optionById.get(id)?.group.id === g.id
+      );
+      const min = g.required ? Math.max(1, g.minSelect) : g.minSelect;
+      if (picked.length < min) {
+        return NextResponse.json(
+          { error: `${variant.menuItem.name}：請選擇「${g.name}」` },
+          { status: 400 }
+        );
+      }
+      if (picked.length > g.maxSelect) {
+        return NextResponse.json(
+          { error: `${variant.menuItem.name}：「${g.name}」最多選 ${g.maxSelect} 項` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 全含單價 = 規格價 + 已選選項加價；並快照每個選項
+    const modifiersData = chosenIds.map((id) => {
+      const { group, option } = optionById.get(id)!;
+      return {
+        optionId: option.id,
+        groupName: group.name,
+        label: option.label,
+        priceDelta: option.priceDelta,
+      };
+    });
+    const unitPrice =
+      variant.price + modifiersData.reduce((s, m) => s + m.priceDelta, 0);
+    total += unitPrice * quantity;
+
     orderItemsData.push({
       variantId: variant.id,
       itemName: variant.menuItem.name,
       variantLabel: variant.label,
-      price: variant.price,
+      price: unitPrice,
       quantity,
       note: line.note?.trim() || null,
+      modifiers: { create: modifiersData },
     });
   }
 

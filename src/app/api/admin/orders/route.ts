@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     orderBy: { createdAt: 'desc' },
     include: {
       table: { select: { number: true } },
-      items: true,
+      items: { include: { modifiers: true } },
     },
   });
   return NextResponse.json(orders);

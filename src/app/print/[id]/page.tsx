@@ -16,7 +16,10 @@ export default async function PrintPage({
 }) {
   const order = await prisma.order.findUnique({
     where: { id: Number(params.id) },
-    include: { table: { select: { number: true } }, items: true },
+    include: {
+      table: { select: { number: true } },
+      items: { include: { modifiers: true } },
+    },
   });
 
   if (!order) {
@@ -71,6 +74,14 @@ export default async function PrintPage({
             </span>
             <span>${it.price * it.quantity}</span>
           </div>
+          {it.modifiers.map((m) => (
+            <div key={m.id} className="r-line" style={{ fontSize: 11 }}>
+              <span>
+                + {m.label}
+                {m.priceDelta ? ` (+$${m.priceDelta})` : ''}
+              </span>
+            </div>
+          ))}
           {it.note && (
             <div className="r-line" style={{ fontSize: 11 }}>
               <span>※ {it.note}</span>

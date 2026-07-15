@@ -21,6 +21,7 @@ type ReceiptOrder = {
     price: number;
     quantity: number;
     note: string | null;
+    modifiers?: { groupName: string; label: string; priceDelta: number }[];
   }[];
 };
 
@@ -81,6 +82,11 @@ export function buildReceiptText(order: ReceiptOrder): string {
       it.itemName + (it.variantLabel ? `(${it.variantLabel})` : '') +
       ` x${it.quantity}`;
     lines.push(twoCols(name, `$${it.price * it.quantity}`));
+    // 客製選項：加價者標註 +$，廚房與客人皆一目了然
+    for (const m of it.modifiers ?? []) {
+      const tag = m.priceDelta ? ` (+$${m.priceDelta})` : '';
+      lines.push(`  + ${m.label}${tag}`);
+    }
     if (it.note) lines.push(`  ※ ${it.note}`);
   }
 
