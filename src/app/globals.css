@@ -283,6 +283,7 @@ button {
   background: var(--brand);
   color: #fff;
   line-height: 1;
+  border-radius: 999px;
 }
 .qty button:disabled {
   background: #ddd;
@@ -421,12 +422,14 @@ button {
   font-size: 18px;
   font-weight: 800;
 }
+/* 主要按鈕一律膠囊形（對齊 Toast） */
 .btn-primary {
   background: var(--brand);
   color: #fff;
   padding: 12px 24px;
   font-size: 16px;
   font-weight: 700;
+  border-radius: 999px;
 }
 .btn-primary:disabled {
   background: #ccc;
@@ -434,14 +437,17 @@ button {
 .btn-ok {
   background: var(--ok);
   color: #fff;
+  border-radius: 999px;
 }
 .btn-danger {
   background: var(--danger);
   color: #fff;
+  border-radius: 999px;
 }
 .btn-ghost {
   background: #f0f0f0;
   color: var(--text);
+  border-radius: 999px;
 }
 
 .spacer-bottom {
@@ -464,15 +470,80 @@ button {
   margin-right: 10px;
 }
 
-/* 客製 modal：選項群組 */
-.grp {
-  margin-top: 16px;
+/* 菜單搜尋列 */
+.searchbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+  color: var(--muted);
+}
+.searchbar input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--text);
+}
+.searchbar .clear {
+  background: #eee;
+  color: var(--muted);
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  font-size: 14px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+/* 客製視窗（Toast 式）：灰底 + 白卡分組 */
+.cust-area {
+  background: #f4f2ee;
+  margin: 12px -16px 0;
+  padding: 14px 16px 16px;
+}
+.opt-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+/* 客製視窗底部固定送出列 */
+.modal-foot {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  margin: 0 -16px;
+  padding: 12px 16px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cust-title {
+  font-weight: 800;
+  font-size: 17px;
+  margin: 2px 0 10px;
+}
+.grp-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 4px 14px 8px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
 }
 .grp-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  margin-bottom: 2px;
+  padding-top: 12px;
 }
 .grp-title {
   font-weight: 700;
@@ -481,54 +552,81 @@ button {
 .grp-hint {
   font-size: 12px;
   color: var(--muted);
-  margin-bottom: 6px;
+  margin: 2px 0;
 }
-.req-badge {
+.badge-req,
+.badge-opt {
   font-size: 11px;
   font-weight: 700;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
+  white-space: nowrap;
+}
+.badge-req {
   background: var(--brand-tint);
   color: var(--brand-dark);
 }
-/* 單一選項列（radio / checkbox 皆共用外觀，右側圓點表示選取） */
-.opt-row {
+.badge-opt {
+  background: #eee;
+  color: #999;
+}
+/* 選項列：名稱(+加價副標) 左、控制項右，選項間細線分隔 */
+.opt-line {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 11px 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  margin-top: 8px;
+  gap: 12px;
+  padding: 13px 0;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
 }
-.opt-row.sel {
-  border-color: var(--brand);
-  background: var(--brand-tint);
+.opt-line + .opt-line {
+  border-top: 1px solid var(--border);
 }
-.opt-row.disabled {
+.opt-line.disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
-.opt-row .opt-delta {
+.opt-name {
+  font-size: 15px;
+}
+.opt-sub {
+  font-size: 13px;
   color: var(--brand-dark);
-  font-weight: 700;
-  font-size: 14px;
-  margin-left: auto;
-  margin-right: 12px;
+  font-weight: 600;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
 }
-.opt-dot {
-  width: 20px;
-  height: 20px;
-  border-radius: 999px;
-  border: 2px solid #ccc;
+/* 控制項：單選＝圓、複選＝方 */
+.ctrl {
+  width: 22px;
+  height: 22px;
   flex: 0 0 auto;
+  border: 2px solid #cfcabf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.opt-row.sel .opt-dot {
+.ctrl.radio {
+  border-radius: 999px;
+}
+.ctrl.check {
+  border-radius: 6px;
+}
+.opt-line.sel .ctrl {
   border-color: var(--brand);
   background: var(--brand);
-  box-shadow: inset 0 0 0 3px #fff;
+}
+.opt-line.sel .ctrl.radio {
+  box-shadow: inset 0 0 0 3.5px #fff;
+}
+.opt-line.sel .ctrl.check::after {
+  content: '';
+  width: 5px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-top: -2px;
 }
 
 /* 訂單管理表格 */
@@ -591,6 +689,7 @@ button {
   padding: 8px 16px;
   background: #eee;
   font-weight: 600;
+  border-radius: 999px;
 }
 .tabs button.active {
   background: var(--brand);

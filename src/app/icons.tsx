@@ -70,6 +70,16 @@ export function IconCheck({ size = 20, style, className }: IconProps) {
   );
 }
 
+// 搜尋
+export function IconSearch({ size = 20, style, className }: IconProps) {
+  return (
+    <svg {...base(size)} style={style} className={className} aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  );
+}
+
 // 餐點佔位（後台無照片時）
 export function IconDish({ size = 20, style, className }: IconProps) {
   return (

@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Category, MenuItem, ModifierGroup } from '@/lib/types';
 import { ORDER_TYPE } from '@/lib/config';
-import { IconCheck, IconDineIn, IconDish, IconTakeout } from '@/app/icons';
+import {
+  IconCheck,
+  IconDineIn,
+  IconDish,
+  IconSearch,
+  IconTakeout,
+} from '@/app/icons';
 
 // 已選的客製選項（下單當下的快照，價格一併記錄）
 type SelectedOption = {
@@ -73,12 +79,29 @@ export default function OrderClient({
     [categories]
   );
 
+  // 菜單搜尋：依名稱/描述過濾
+  const [query, setQuery] = useState('');
+  const q = query.trim().toLowerCase();
+  const displayCategories = useMemo(() => {
+    if (!q) return shownCategories;
+    return shownCategories
+      .map((c) => ({
+        ...c,
+        items: c.items.filter(
+          (it) =>
+            it.name.toLowerCase().includes(q) ||
+            (it.description ?? '').toLowerCase().includes(q)
+        ),
+      }))
+      .filter((c) => c.items.length > 0);
+  }, [shownCategories, q]);
+
   // 分類快速導覽：scroll-spy 標記目前所在分類
   const [activeCat, setActiveCat] = useState<number | null>(null);
   const sectionRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   useEffect(() => {
-    if (shownCategories.length < 2) return;
+    if (displayCategories.length < 2) return;
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries
@@ -93,7 +116,7 @@ export default function OrderClient({
     );
     Object.values(sectionRefs.current).forEach((el) => el && observer.observe(el));
     return () => observer.disconnect();
-  }, [shownCategories]);
+  }, [displayCategories]);
 
   function jumpTo(catId: number) {
     sectionRefs.current[catId]?.scrollIntoView({
@@ -262,8 +285,8 @@ export default function OrderClient({
 
   return (
     <>
-      {/* 分類快速導覽（超過一個分類才顯示） */}
-      {shownCategories.length > 1 && (
+      {/* 分類快速導覽（搜尋時隱藏） */}
+      {!q && shownCategories.length > 1 && (
         <div className="catnav">
           {shownCategories.map((cat) => (
             <button
@@ -306,7 +329,30 @@ export default function OrderClient({
           </div>
         )}
 
-        {shownCategories.map((cat) => (
+        {/* 菜單搜尋 */}
+        <div className="searchbar">
+          <IconSearch size={18} />
+          <input
+            placeholder="搜尋餐點…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {query && (
+            <button
+              className="clear"
+              aria-label="清除搜尋"
+              onClick={() => setQuery('')}
+            >
+              ×
+            </button>
+          )}
+        </div>
+
+        {q && displayCategories.length === 0 && (
+          <div className="empty">找不到「{query}」的餐點</div>
+        )}
+
+        {displayCategories.map((cat) => (
           <div
             key={cat.id}
             data-cat={cat.id}
@@ -669,93 +715,97 @@ function CustomizeModal({
           </div>
         )}
 
-        {/* 規格（多規格時才顯示為單選群組） */}
-        {item.variants.length > 1 && (
-          <div className="grp">
-            <div className="grp-head">
-              <span className="grp-title">規格</span>
-              <span className="req-badge">必選</span>
-            </div>
-            <div className="grp-hint">選 1 項</div>
-            {item.variants.map((v) => {
-              const sel = v.id === variantId;
-              return (
-                <div
-                  key={v.id}
-                  className={sel ? 'opt-row sel' : 'opt-row'}
-                  onClick={() => setVariantId(v.id)}
-                >
-                  <span>{v.label || '單一價'}</span>
-                  <span className="opt-delta">${v.price}</span>
-                  <span className="opt-dot" />
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <div className="cust-area">
+          <div className="cust-title">客製你的餐點</div>
 
-        {/* 客製群組 */}
-        {item.modifierGroups.map((g) => {
-          const cur = selected[g.id] ?? [];
-          const atMax = cur.length >= g.maxSelect;
-          return (
-            <div key={g.id} className="grp">
+          {/* 規格（多規格時才顯示；單選＝圓形 radio） */}
+          {item.variants.length > 1 && (
+            <div className="grp-card">
               <div className="grp-head">
-                <span className="grp-title">{g.name}</span>
-                {minFor(g) > 0 && <span className="req-badge">必選</span>}
+                <span className="grp-title">規格</span>
+                <span className="badge-req">必選</span>
               </div>
-              <div className="grp-hint">
-                {g.maxSelect === 1
-                  ? '選 1 項'
-                  : `最多選 ${g.maxSelect} 項${
-                      minFor(g) > 0 ? `，至少 ${minFor(g)} 項` : '（可不選）'
-                    }`}
-              </div>
-              {g.options.map((o) => {
-                const sel = cur.includes(o.id);
-                const disabled = !sel && atMax && g.maxSelect > 1;
+              <div className="grp-hint">選 1 項</div>
+              {item.variants.map((v) => {
+                const sel = v.id === variantId;
                 return (
                   <div
-                    key={o.id}
-                    className={`opt-row${sel ? ' sel' : ''}${
-                      disabled ? ' disabled' : ''
-                    }`}
-                    onClick={() => !disabled && toggle(g, o.id)}
+                    key={v.id}
+                    className={sel ? 'opt-line sel' : 'opt-line'}
+                    onClick={() => setVariantId(v.id)}
                   >
-                    <span>{o.label}</span>
-                    {o.priceDelta > 0 && (
-                      <span className="opt-delta">+${o.priceDelta}</span>
-                    )}
-                    <span className="opt-dot" />
+                    <span className="opt-main">
+                      <span className="opt-name">{v.label || '單一價'}</span>
+                      <span className="opt-sub">${v.price}</span>
+                    </span>
+                    <span className="ctrl radio" />
                   </div>
                 );
               })}
             </div>
-          );
-        })}
+          )}
 
-        {/* 數量 + 加入 */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginTop: 20,
-            gap: 12,
-          }}
-        >
+          {/* 客製群組（單選＝圓、複選＝方） */}
+          {item.modifierGroups.map((g) => {
+            const cur = selected[g.id] ?? [];
+            const atMax = cur.length >= g.maxSelect;
+            const multi = g.maxSelect > 1;
+            const required = minFor(g) > 0;
+            return (
+              <div key={g.id} className="grp-card">
+                <div className="grp-head">
+                  <span className="grp-title">{g.name}</span>
+                  <span className={required ? 'badge-req' : 'badge-opt'}>
+                    {required ? '必選' : '選填'}
+                  </span>
+                </div>
+                <div className="grp-hint">
+                  {multi
+                    ? `最多選 ${g.maxSelect} 項${
+                        required ? `，至少 ${minFor(g)} 項` : '（可不選）'
+                      }`
+                    : '選 1 項'}
+                </div>
+                {g.options.map((o) => {
+                  const sel = cur.includes(o.id);
+                  const disabled = !sel && atMax && multi;
+                  return (
+                    <div
+                      key={o.id}
+                      className={`opt-line${sel ? ' sel' : ''}${
+                        disabled ? ' disabled' : ''
+                      }`}
+                      onClick={() => !disabled && toggle(g, o.id)}
+                    >
+                      <span className="opt-main">
+                        <span className="opt-name">{o.label}</span>
+                        {o.priceDelta > 0 && (
+                          <span className="opt-sub">+${o.priceDelta}</span>
+                        )}
+                      </span>
+                      <span className={multi ? 'ctrl check' : 'ctrl radio'} />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 數量 + 加入（固定於視窗底部） */}
+        <div className="modal-foot">
           <span className="qty" style={{ gap: 14 }}>
             <button
               aria-label="減少"
               disabled={quantity <= 1}
-              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+              onClick={() => setQuantity((n) => Math.max(1, n - 1))}
             >
               −
             </button>
             <span className="n" style={{ fontSize: 18 }}>
               {quantity}
             </span>
-            <button aria-label="增加" onClick={() => setQuantity((q) => q + 1)}>
+            <button aria-label="增加" onClick={() => setQuantity((n) => n + 1)}>
               ＋
             </button>
           </span>
