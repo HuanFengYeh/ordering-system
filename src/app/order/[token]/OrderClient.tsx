@@ -1,17 +1,33 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Category } from '@/lib/types';
+import type { Category, MenuItem, ModifierGroup } from '@/lib/types';
 import { ORDER_TYPE } from '@/lib/config';
+import { IconCheck, IconDineIn, IconTakeout } from '@/app/icons';
+
+// 已選的客製選項（下單當下的快照，價格一併記錄）
+type SelectedOption = {
+  optionId: number;
+  groupName: string;
+  label: string;
+  priceDelta: number;
+};
 
 type CartLine = {
+  key: string; // 同規格＋同客製 = 同一行；備註不參與 key
   variantId: number;
   itemName: string;
   variantLabel: string;
-  price: number;
+  unitPrice: number; // 全含單價：規格價 + 所有客製加價
   quantity: number;
-  note: string; // 這一項專屬的備註（不再全單共用）
+  note: string; // 這一項專屬的備註
+  options: SelectedOption[];
 };
+
+// 同規格 + 同選項組合 → 同一個 key（備註不影響，可於購物車內編輯）
+function keyFor(variantId: number, optionIds: number[]): string {
+  return `${variantId}:${[...optionIds].sort((a, b) => a - b).join('-')}`;
+}
 
 export default function OrderClient({
   token,
@@ -25,13 +41,14 @@ export default function OrderClient({
   // 若為外帶專用入口，鎖定外帶、不顯示內用/外帶切換
   fixedType?: 'TAKEOUT';
 }) {
-  const [cart, setCart] = useState<Record<number, CartLine>>({});
+  const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [orderType, setOrderType] = useState<string>(
     fixedType ?? ORDER_TYPE.DINE_IN
   );
   const [pickupName, setPickupName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [customizing, setCustomizing] = useState<MenuItem | null>(null);
   const [done, setDone] = useState<null | {
     orderId: number;
     total: number;
@@ -42,7 +59,7 @@ export default function OrderClient({
   const isTakeout = orderType === ORDER_TYPE.TAKEOUT;
   const lines = useMemo(() => Object.values(cart), [cart]);
   const total = useMemo(
-    () => lines.reduce((s, l) => s + l.price * l.quantity, 0),
+    () => lines.reduce((s, l) => s + l.unitPrice * l.quantity, 0),
     [lines]
   );
   const count = useMemo(
@@ -85,38 +102,94 @@ export default function OrderClient({
     });
   }
 
-  function setQty(
-    variantId: number,
-    itemName: string,
-    variantLabel: string,
-    price: number,
-    delta: number
-  ) {
+  // 加入 / 累加一行（同 key 合併數量、保留既有備註）
+  function mergeLine(base: Omit<CartLine, 'quantity'>, delta: number) {
     setCart((prev) => {
-      const cur = prev[variantId];
+      const cur = prev[base.key];
       const nextQty = (cur?.quantity ?? 0) + delta;
       const next = { ...prev };
-      if (nextQty <= 0) delete next[variantId];
+      if (nextQty <= 0) delete next[base.key];
       else
-        next[variantId] = {
-          variantId,
-          itemName,
-          variantLabel,
-          price,
+        next[base.key] = {
+          ...base,
           quantity: nextQty,
-          note: cur?.note ?? '', // 調整數量時保留原備註
+          note: cur?.note ?? base.note,
         };
       return next;
     });
   }
 
-  // 設定某一項的專屬備註
-  function setLineNote(variantId: number, note: string) {
+  // 依 key 調整數量（購物車內 +/−）
+  function changeQty(key: string, delta: number) {
     setCart((prev) => {
-      const cur = prev[variantId];
+      const cur = prev[key];
       if (!cur) return prev;
-      return { ...prev, [variantId]: { ...cur, note } };
+      const q = cur.quantity + delta;
+      const next = { ...prev };
+      if (q <= 0) delete next[key];
+      else next[key] = { ...cur, quantity: q };
+      return next;
     });
+  }
+
+  function setLineNote(key: string, note: string) {
+    setCart((prev) => {
+      const cur = prev[key];
+      if (!cur) return prev;
+      return { ...prev, [key]: { ...cur, note } };
+    });
+  }
+
+  // 無客製品項：單一規格直接 +/−
+  function addSimpleVariant(
+    item: MenuItem,
+    variant: { id: number; label: string; price: number },
+    delta: number
+  ) {
+    mergeLine(
+      {
+        key: keyFor(variant.id, []),
+        variantId: variant.id,
+        itemName: item.name,
+        variantLabel: variant.label,
+        unitPrice: variant.price,
+        note: '',
+        options: [],
+      },
+      delta
+    );
+  }
+
+  // 客製 modal 送出：帶入所選規格 + 選項
+  function addCustomized(
+    item: MenuItem,
+    variant: { id: number; label: string; price: number },
+    options: SelectedOption[],
+    quantity: number
+  ) {
+    const unitPrice =
+      variant.price + options.reduce((s, o) => s + o.priceDelta, 0);
+    mergeLine(
+      {
+        key: keyFor(variant.id, options.map((o) => o.optionId)),
+        variantId: variant.id,
+        itemName: item.name,
+        variantLabel: variant.label,
+        unitPrice,
+        note: '',
+        options,
+      },
+      quantity
+    );
+    setCustomizing(null);
+  }
+
+  // 某菜色目前已加入的總數量（用於菜單列上的小標）
+  function itemQtyInCart(item: MenuItem): number {
+    const ids = new Set(item.variants.map((v) => v.id));
+    return lines
+      .filter((l) => ids.has(l.variantId))
+      .reduce((s, l) => s + l.quantity, 0);
   }
 
   async function submit() {
@@ -135,6 +208,7 @@ export default function OrderClient({
             variantId: l.variantId,
             quantity: l.quantity,
             note: l.note.trim() || undefined,
+            modifierOptionIds: l.options.map((o) => o.optionId),
           })),
         }),
       });
@@ -159,7 +233,7 @@ export default function OrderClient({
     const doneTakeout = done.orderType === ORDER_TYPE.TAKEOUT;
     return (
       <div className="center">
-        <div style={{ fontSize: 56 }}>✅</div>
+        <IconCheck size={64} style={{ color: 'var(--ok)' }} />
         <h2>訂單已送出！</h2>
         <p>
           <span className="badge submitted" style={{ fontSize: 14 }}>
@@ -208,15 +282,24 @@ export default function OrderClient({
         {!fixedType && (
           <div className="card" style={{ display: 'flex', gap: 8 }}>
             {[
-              { key: ORDER_TYPE.DINE_IN, label: '🍽️ 內用' },
-              { key: ORDER_TYPE.TAKEOUT, label: '🥡 外帶' },
+              { key: ORDER_TYPE.DINE_IN, label: '內用', Icon: IconDineIn },
+              { key: ORDER_TYPE.TAKEOUT, label: '外帶', Icon: IconTakeout },
             ].map((opt) => (
               <button
                 key={opt.key}
                 onClick={() => setOrderType(opt.key)}
                 className={orderType === opt.key ? 'btn-primary' : 'btn-ghost'}
-                style={{ flex: 1, padding: '12px 0', fontSize: 16 }}
+                style={{
+                  flex: 1,
+                  padding: '12px 0',
+                  fontSize: 16,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
               >
+                <opt.Icon size={20} />
                 {opt.label}
               </button>
             ))}
@@ -235,57 +318,101 @@ export default function OrderClient({
             <div className="cat-title">{cat.name}</div>
             {cat.note && <div className="cat-note">＊{cat.note}</div>}
             <div className="card">
-              {cat.items.map((item) => (
-                <div key={item.id} className="item">
-                  <div className="item-name">{item.name}</div>
-                  {item.description && (
-                    <div className="item-desc">{item.description}</div>
-                  )}
-                  {item.variants.map((v) => {
-                    const line = cart[v.id];
-                    const qty = line?.quantity ?? 0;
-                    return (
-                      <div
-                        key={v.id}
-                        className={qty > 0 ? 'variant-row in-cart' : 'variant-row'}
-                      >
+              {cat.items.map((item) => {
+                const hasMods = item.modifierGroups.length > 0;
+                const inCart = itemQtyInCart(item);
+                const minPrice = Math.min(...item.variants.map((v) => v.price));
+                const multiVariant = item.variants.length > 1;
+                return (
+                  <div key={item.id} className="item">
+                    <div className="item-head">
+                      {item.imageUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          className="item-photo"
+                          src={item.imageUrl}
+                          alt={item.name}
+                        />
+                      )}
+                      <div className="item-body">
+                        <div className="item-name">{item.name}</div>
+                        {item.description && (
+                          <div className="item-desc">{item.description}</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {hasMods ? (
+                      /* 需客製：整列可點，開啟客製視窗 */
+                      <div className="variant-row">
                         <span className="variant-label">
-                          {v.label ? v.label : '單一價'}
-                        </span>
-                        <span
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 14,
-                          }}
-                        >
-                          <span className="price">${v.price}</span>
-                          <span className="qty">
-                            <button
-                              aria-label="減少"
-                              disabled={qty === 0}
-                              onClick={() =>
-                                setQty(v.id, item.name, v.label, v.price, -1)
-                              }
-                            >
-                              −
-                            </button>
-                            <span className="n">{qty}</span>
-                            <button
-                              aria-label="增加"
-                              onClick={() =>
-                                setQty(v.id, item.name, v.label, v.price, +1)
-                              }
-                            >
-                              ＋
-                            </button>
+                          {multiVariant ? `$${minPrice} 起` : `$${minPrice}`}
+                          <span
+                            style={{
+                              color: 'var(--muted)',
+                              fontSize: 12,
+                              marginLeft: 6,
+                            }}
+                          >
+                            可客製
                           </span>
                         </span>
+                        <span style={{ display: 'flex', alignItems: 'center' }}>
+                          {inCart > 0 && (
+                            <span className="item-qty-badge">已加 {inCart}</span>
+                          )}
+                          <button
+                            className="btn-choose"
+                            onClick={() => setCustomizing(item)}
+                          >
+                            選擇 ＋
+                          </button>
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
-              ))}
+                    ) : (
+                      /* 無客製：維持逐規格快速 +/− */
+                      item.variants.map((v) => {
+                        const qty = cart[keyFor(v.id, [])]?.quantity ?? 0;
+                        return (
+                          <div
+                            key={v.id}
+                            className={
+                              qty > 0 ? 'variant-row in-cart' : 'variant-row'
+                            }
+                          >
+                            <span className="variant-label">{v.label}</span>
+                            <span
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 14,
+                              }}
+                            >
+                              <span className="price">${v.price}</span>
+                              <span className="qty">
+                                <button
+                                  aria-label="減少"
+                                  disabled={qty === 0}
+                                  onClick={() => addSimpleVariant(item, v, -1)}
+                                >
+                                  −
+                                </button>
+                                <span className="n">{qty}</span>
+                                <button
+                                  aria-label="增加"
+                                  onClick={() => addSimpleVariant(item, v, +1)}
+                                >
+                                  ＋
+                                </button>
+                              </span>
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         ))}
@@ -317,6 +444,15 @@ export default function OrderClient({
         </button>
       </div>
 
+      {/* 客製視窗 */}
+      {customizing && (
+        <CustomizeModal
+          item={customizing}
+          onClose={() => setCustomizing(null)}
+          onAdd={addCustomized}
+        />
+      )}
+
       {/* 購物車 review 面板：送出前檢視、改量、備註、外帶取餐資訊 */}
       {reviewOpen && (
         <>
@@ -330,6 +466,7 @@ export default function OrderClient({
               <h3>
                 購物車
                 <span style={{ fontSize: 13, color: '#888', fontWeight: 400 }}>
+                  {'　'}
                   {isTakeout ? '外帶' : `內用・桌 ${tableNumber ?? '-'}`}
                 </span>
               </h3>
@@ -345,7 +482,13 @@ export default function OrderClient({
             {lines.length === 0 && <div className="empty">購物車是空的</div>}
 
             {lines.map((l) => (
-              <div key={l.variantId} style={{ borderBottom: '1px solid var(--border)', padding: '10px 0' }}>
+              <div
+                key={l.key}
+                style={{
+                  borderBottom: '1px solid var(--border)',
+                  padding: '10px 0',
+                }}
+              >
                 <div
                   className="sheet-line"
                   style={{ border: 'none', padding: 0 }}
@@ -355,25 +498,31 @@ export default function OrderClient({
                     {l.variantLabel && (
                       <span className="l-sub">　{l.variantLabel}</span>
                     )}
+                    {l.options.length > 0 && (
+                      <div className="l-sub">
+                        {l.options
+                          .map(
+                            (o) =>
+                              `${o.label}${o.priceDelta ? `(+$${o.priceDelta})` : ''}`
+                          )
+                          .join('、')}
+                      </div>
+                    )}
                     <div className="l-sub">
-                      ${l.price} × {l.quantity} = ${l.price * l.quantity}
+                      ${l.unitPrice} × {l.quantity} = ${l.unitPrice * l.quantity}
                     </div>
                   </span>
                   <span className="qty">
                     <button
                       aria-label="減少"
-                      onClick={() =>
-                        setQty(l.variantId, l.itemName, l.variantLabel, l.price, -1)
-                      }
+                      onClick={() => changeQty(l.key, -1)}
                     >
                       −
                     </button>
                     <span className="n">{l.quantity}</span>
                     <button
                       aria-label="增加"
-                      onClick={() =>
-                        setQty(l.variantId, l.itemName, l.variantLabel, l.price, +1)
-                      }
+                      onClick={() => changeQty(l.key, +1)}
                     >
                       ＋
                     </button>
@@ -383,9 +532,9 @@ export default function OrderClient({
                 <input
                   className="textarea"
                   style={{ marginTop: 6, fontSize: 13 }}
-                  placeholder="這一項的備註（例如：不要辣、去冰）"
+                  placeholder="這一項的備註（例如：不要香菜、去冰）"
                   value={l.note}
-                  onChange={(e) => setLineNote(l.variantId, e.target.value)}
+                  onChange={(e) => setLineNote(l.key, e.target.value)}
                 />
               </div>
             ))}
@@ -438,6 +587,199 @@ export default function OrderClient({
           </div>
         </>
       )}
+    </>
+  );
+}
+
+// ── 客製視窗：選規格 + 選項（辣度/加料…）+ 數量 ──────────────────
+function CustomizeModal({
+  item,
+  onClose,
+  onAdd,
+}: {
+  item: MenuItem;
+  onClose: () => void;
+  onAdd: (
+    item: MenuItem,
+    variant: { id: number; label: string; price: number },
+    options: SelectedOption[],
+    quantity: number
+  ) => void;
+}) {
+  const [variantId, setVariantId] = useState(item.variants[0]?.id ?? 0);
+  // 每個群組已選的 optionId 清單
+  const [selected, setSelected] = useState<Record<number, number[]>>({});
+  const [quantity, setQuantity] = useState(1);
+
+  const variant =
+    item.variants.find((v) => v.id === variantId) ?? item.variants[0];
+
+  function minFor(g: ModifierGroup): number {
+    return g.required ? Math.max(1, g.minSelect) : g.minSelect;
+  }
+
+  function toggle(g: ModifierGroup, optId: number) {
+    setSelected((prev) => {
+      const cur = prev[g.id] ?? [];
+      // 單選：直接替換；非必選時可再次點擊取消
+      if (g.maxSelect === 1) {
+        const isSel = cur[0] === optId;
+        return { ...prev, [g.id]: isSel && !g.required ? [] : [optId] };
+      }
+      // 複選：切換，達上限時不再新增
+      if (cur.includes(optId)) {
+        return { ...prev, [g.id]: cur.filter((id) => id !== optId) };
+      }
+      if (cur.length >= g.maxSelect) return prev;
+      return { ...prev, [g.id]: [...cur, optId] };
+    });
+  }
+
+  // 每個群組是否滿足數量限制
+  const allValid = item.modifierGroups.every((g) => {
+    const n = (selected[g.id] ?? []).length;
+    return n >= minFor(g) && n <= g.maxSelect;
+  });
+
+  // 已選選項展開 + 全含單價
+  const chosenOptions: SelectedOption[] = item.modifierGroups.flatMap((g) =>
+    (selected[g.id] ?? []).map((optId) => {
+      const o = g.options.find((x) => x.id === optId)!;
+      return {
+        optionId: o.id,
+        groupName: g.name,
+        label: o.label,
+        priceDelta: o.priceDelta,
+      };
+    })
+  );
+  const unitPrice =
+    (variant?.price ?? 0) +
+    chosenOptions.reduce((s, o) => s + o.priceDelta, 0);
+
+  return (
+    <>
+      <div className="sheet-backdrop" onClick={onClose} />
+      <div className="sheet" role="dialog" aria-label={`客製 ${item.name}`}>
+        <div className="sheet-grip" />
+        {item.imageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="modal-hero" src={item.imageUrl} alt={item.name} />
+        )}
+        <div className="sheet-head">
+          <h3>{item.name}</h3>
+          <button className="sheet-close" aria-label="關閉" onClick={onClose}>
+            ×
+          </button>
+        </div>
+        {item.description && (
+          <div className="item-desc" style={{ marginTop: -4 }}>
+            {item.description}
+          </div>
+        )}
+
+        {/* 規格（多規格時才顯示為單選群組） */}
+        {item.variants.length > 1 && (
+          <div className="grp">
+            <div className="grp-head">
+              <span className="grp-title">規格</span>
+              <span className="req-badge">必選</span>
+            </div>
+            <div className="grp-hint">選 1 項</div>
+            {item.variants.map((v) => {
+              const sel = v.id === variantId;
+              return (
+                <div
+                  key={v.id}
+                  className={sel ? 'opt-row sel' : 'opt-row'}
+                  onClick={() => setVariantId(v.id)}
+                >
+                  <span>{v.label || '單一價'}</span>
+                  <span className="opt-delta">${v.price}</span>
+                  <span className="opt-dot" />
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* 客製群組 */}
+        {item.modifierGroups.map((g) => {
+          const cur = selected[g.id] ?? [];
+          const atMax = cur.length >= g.maxSelect;
+          return (
+            <div key={g.id} className="grp">
+              <div className="grp-head">
+                <span className="grp-title">{g.name}</span>
+                {minFor(g) > 0 && <span className="req-badge">必選</span>}
+              </div>
+              <div className="grp-hint">
+                {g.maxSelect === 1
+                  ? '選 1 項'
+                  : `最多選 ${g.maxSelect} 項${
+                      minFor(g) > 0 ? `，至少 ${minFor(g)} 項` : '（可不選）'
+                    }`}
+              </div>
+              {g.options.map((o) => {
+                const sel = cur.includes(o.id);
+                const disabled = !sel && atMax && g.maxSelect > 1;
+                return (
+                  <div
+                    key={o.id}
+                    className={`opt-row${sel ? ' sel' : ''}${
+                      disabled ? ' disabled' : ''
+                    }`}
+                    onClick={() => !disabled && toggle(g, o.id)}
+                  >
+                    <span>{o.label}</span>
+                    {o.priceDelta > 0 && (
+                      <span className="opt-delta">+${o.priceDelta}</span>
+                    )}
+                    <span className="opt-dot" />
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+
+        {/* 數量 + 加入 */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginTop: 20,
+            gap: 12,
+          }}
+        >
+          <span className="qty" style={{ gap: 14 }}>
+            <button
+              aria-label="減少"
+              disabled={quantity <= 1}
+              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+            >
+              −
+            </button>
+            <span className="n" style={{ fontSize: 18 }}>
+              {quantity}
+            </span>
+            <button aria-label="增加" onClick={() => setQuantity((q) => q + 1)}>
+              ＋
+            </button>
+          </span>
+          <button
+            className="btn-primary"
+            style={{ flex: 1 }}
+            disabled={!allValid || !variant}
+            onClick={() =>
+              variant && onAdd(item, variant, chosenOptions, quantity)
+            }
+          >
+            加入購物車　${unitPrice * quantity}
+          </button>
+        </div>
+      </div>
     </>
   );
 }

@@ -27,7 +27,7 @@ export default async function TablesQRPrintPage() {
     margin: 1,
     width: 220,
   });
-  cards.push({ id: -1, number: -1, label: '🥡 外帶', svg: takeoutSvg });
+  cards.push({ id: -1, number: -1, label: '外帶', svg: takeoutSvg });
 
   return (
     <div style={{ padding: 16, color: '#000', background: '#fff' }}>

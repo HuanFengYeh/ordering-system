@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { RESTAURANT_NAME } from '@/lib/config';
 import type { Order, DaySummary } from '@/lib/types';
+import { IconBell } from '@/app/icons';
 
 const TABS = [
   { key: 'SUBMITTED', label: '待結帳' },
@@ -26,10 +27,11 @@ export default function AdminOrdersPage() {
   const knownIds = useRef<Set<number>>(new Set());
   const firstLoad = useRef(true);
   const audioCtx = useRef<AudioContext | null>(null);
+  const soundOnRef = useRef(false); // 供輪詢回呼即時判斷是否要響
 
   const beep = useCallback(() => {
     const ctx = audioCtx.current;
-    if (!ctx) return;
+    if (!ctx || !soundOnRef.current) return;
     const tone = (freq: number, at: number) => {
       const o = ctx.createOscillator();
       const g = ctx.createGain();
@@ -84,13 +86,22 @@ export default function AdminOrdersPage() {
     return () => clearInterval(t);
   }, [load]);
 
-  function enableSound() {
-    const Ctx =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext })
-        .webkitAudioContext;
-    audioCtx.current = new Ctx();
+  // 右上角開關：開→建立/恢復 AudioContext（點擊本身即使用者手勢）；關→靜音
+  function toggleSound() {
+    if (soundOn) {
+      soundOnRef.current = false;
+      setSoundOn(false);
+      return;
+    }
+    if (!audioCtx.current) {
+      const Ctx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
+      audioCtx.current = new Ctx();
+    }
     audioCtx.current.resume();
+    soundOnRef.current = true;
     setSoundOn(true);
     beep();
   }
@@ -130,6 +141,21 @@ export default function AdminOrdersPage() {
       <div className="appbar">
         <span className="brand">{RESTAURANT_NAME}</span>
         <span style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button
+            role="switch"
+            aria-checked={soundOn}
+            aria-label={soundOn ? '關閉新訂單提示音' : '開啟新訂單提示音'}
+            title={soundOn ? '提示音：開' : '提示音：關'}
+            className={`bell-switch${soundOn ? ' on' : ''}`}
+            onClick={toggleSound}
+          >
+            <span className="bell-ico">
+              <IconBell size={16} />
+            </span>
+            <span className="bell-track">
+              <span className="bell-knob" />
+            </span>
+          </button>
           <Link href="/admin/close" style={{ color: '#fff' }}>
             收班
           </Link>
@@ -158,18 +184,6 @@ export default function AdminOrdersPage() {
             <Stat label="待結帳" value={`${summary.unpaidCount} 張`} warn={summary.unpaidCount > 0} />
             <Stat label="內用/外帶" value={`${summary.dineInCount}/${summary.takeoutCount}`} />
             <Stat label="平均客單" value={`$${summary.avgTicket}`} />
-          </div>
-        )}
-
-        {!soundOn && (
-          <div
-            className="card"
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-          >
-            <span style={{ fontSize: 14 }}>🔔 開啟新訂單提示音</span>
-            <button className="btn-primary" style={{ padding: '6px 14px' }} onClick={enableSound}>
-              開啟音效
-            </button>
           </div>
         )}
 
@@ -248,6 +262,17 @@ export default function AdminOrdersPage() {
                   <span>
                     {it.itemName}
                     {it.variantLabel ? `（${it.variantLabel}）` : ''} ×{it.quantity}
+                    {it.modifiers.length > 0 && (
+                      <span style={{ color: '#666', fontSize: 12 }}>
+                        {'　'}
+                        {it.modifiers
+                          .map(
+                            (m) =>
+                              `+${m.label}${m.priceDelta ? `(+$${m.priceDelta})` : ''}`
+                          )
+                          .join('、')}
+                      </span>
+                    )}
                     {it.note && <span className="note">　※{it.note}</span>}
                   </span>
                   <span>${it.price * it.quantity}</span>

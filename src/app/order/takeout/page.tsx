@@ -1,5 +1,6 @@
 import { RESTAURANT_NAME, RESTAURANT_SUBTITLE } from '@/lib/config';
 import { getCustomerMenu } from '@/lib/menu';
+import { IconTakeout } from '@/app/icons';
 import OrderClient from '../[token]/OrderClient';
 
 // 菜單即時變動，不可靜態快取
@@ -16,7 +17,13 @@ export default async function TakeoutPage() {
           <span className="brand">{RESTAURANT_NAME}</span>{' '}
           <span className="sub">{RESTAURANT_SUBTITLE}</span>
         </div>
-        <span className="sub">🥡 外帶</span>
+        <span
+          className="sub"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}
+        >
+          <IconTakeout size={15} />
+          外帶
+        </span>
       </div>
       <OrderClient
         token={null}

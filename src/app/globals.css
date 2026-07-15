@@ -2,13 +2,15 @@
   --brand: #f39c12;
   --brand-dark: #e67e22;
   --brand-tint: #fff6e9;
-  --bg: #fafafa;
+  /* 暖色中性系：底色帶一點奶油，襯托橘色主色而不搶戲 */
+  --bg: #faf7f2;
   --card: #ffffff;
-  --text: #222;
-  --muted: #888;
-  --border: #eee;
+  --text: #26221d;
+  --muted: #8a827a;
+  --border: #eee6da;
   --danger: #e74c3c;
   --ok: #27ae60;
+  --shadow: 0 1px 3px rgba(80, 60, 30, 0.07);
   /* 頂欄高度：分類導覽列 sticky 定位與捲動錨點都以此為基準 */
   --appbar-h: 52px;
   --catnav-h: 49px;
@@ -24,9 +26,23 @@ body {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC',
+  /* 拉丁/數字用設計字體，中文字回退到系統高品質字體（PingFang / Noto Sans CJK） */
+  font-family: var(--font-latin), -apple-system, BlinkMacSystemFont,
+    'PingFang TC', 'Noto Sans TC', 'Noto Sans CJK TC', 'Microsoft JhengHei',
     system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 金額/數字一律等寬對齊，價格排列更整齊、更專業 */
+.price,
+.total,
+.cart-count-badge,
+.opt-delta,
+.n {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
 }
 
 a {
@@ -75,7 +91,7 @@ button {
   position: sticky;
   top: var(--appbar-h);
   z-index: 9;
-  background: rgba(250, 250, 250, 0.92);
+  background: rgba(250, 247, 242, 0.92);
   backdrop-filter: saturate(1.2) blur(6px);
   border-bottom: 1px solid var(--border);
   display: flex;
@@ -111,16 +127,17 @@ button {
 /* 卡片 */
 .card {
   background: var(--card);
-  border-radius: 12px;
-  padding: 14px;
+  border-radius: 14px;
+  padding: 16px;
   margin-bottom: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow);
 }
 
 .cat-title {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 20px 0 4px;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin: 26px 0 6px;
   color: var(--brand-dark);
 }
 .cat-note {
@@ -130,20 +147,40 @@ button {
 }
 
 .item {
-  padding: 10px 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--border);
 }
 .item:last-child {
   border-bottom: none;
 }
+/* 品項標頭：左方照片 + 右方文字（Toast 式圖像化卡片；無照片時文字佔滿） */
+.item-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.item-photo {
+  width: 84px;
+  height: 84px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex: 0 0 auto;
+  background: #f2f2f2;
+}
+.item-body {
+  flex: 1;
+  min-width: 0;
+}
 .item-name {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 16px;
+  letter-spacing: 0.2px;
 }
 .item-desc {
-  font-size: 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
   color: var(--muted);
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .variant-row {
@@ -261,6 +298,14 @@ button {
   background: #ddd;
   margin: 6px auto 12px;
 }
+/* 客製視窗頂部大圖 */
+.modal-hero {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
 .sheet-head {
   display: flex;
   align-items: center;
@@ -337,13 +382,96 @@ button {
   height: 88px;
 }
 
+/* 客製品項：菜單列右側「選擇」按鈕 */
+.btn-choose {
+  background: var(--brand);
+  color: #fff;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 999px;
+}
+.item-qty-badge {
+  font-size: 12px;
+  color: var(--brand-dark);
+  font-weight: 700;
+  margin-right: 10px;
+}
+
+/* 客製 modal：選項群組 */
+.grp {
+  margin-top: 16px;
+}
+.grp-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.grp-title {
+  font-weight: 700;
+  font-size: 15px;
+}
+.grp-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.req-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--brand-tint);
+  color: var(--brand-dark);
+}
+/* 單一選項列（radio / checkbox 皆共用外觀，右側圓點表示選取） */
+.opt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.opt-row.sel {
+  border-color: var(--brand);
+  background: var(--brand-tint);
+}
+.opt-row.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.opt-row .opt-delta {
+  color: var(--brand-dark);
+  font-weight: 700;
+  font-size: 14px;
+  margin-left: auto;
+  margin-right: 12px;
+}
+.opt-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 2px solid #ccc;
+  flex: 0 0 auto;
+}
+.opt-row.sel .opt-dot {
+  border-color: var(--brand);
+  background: var(--brand);
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
 /* 訂單管理表格 */
 .order-card {
   background: #fff;
-  border-radius: 12px;
-  padding: 14px;
+  border-radius: 14px;
+  padding: 16px;
   margin-bottom: 14px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow);
 }
 .order-head {
   display: flex;
@@ -460,6 +588,51 @@ button {
 .print-btn {
   display: block;
   margin: 20px auto;
+}
+
+/* 頂欄提示音開關（右上角簡潔 switch） */
+.bell-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  padding: 2px 4px;
+}
+.bell-switch .bell-ico {
+  font-size: 15px;
+  filter: grayscale(1);
+  opacity: 0.65;
+  transition: 0.15s;
+}
+.bell-switch.on .bell-ico {
+  filter: none;
+  opacity: 1;
+}
+.bell-switch .bell-track {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.35);
+  transition: background 0.15s;
+}
+.bell-switch.on .bell-track {
+  background: #fff;
+}
+.bell-switch .bell-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s;
+}
+.bell-switch.on .bell-knob {
+  transform: translateX(16px);
+  background: var(--brand);
 }
 
 @media print {

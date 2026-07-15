@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { RESTAURANT_NAME, RESTAURANT_SUBTITLE } from '@/lib/config';
+import { IconTakeout } from '@/app/icons';
 
 // 桌位清單即時變動，不可靜態快取
 export const dynamic = 'force-dynamic';
@@ -34,9 +35,15 @@ export default async function Home() {
           <Link
             href="/order/takeout"
             className="btn-primary"
-            style={{ display: 'inline-block', padding: '10px 20px' }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 20px',
+            }}
           >
-            🥡 外帶點餐（不綁桌）
+            <IconTakeout size={18} />
+            外帶點餐（不綁桌）
           </Link>
         </div>
 
