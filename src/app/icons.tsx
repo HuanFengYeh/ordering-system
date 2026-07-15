@@ -70,6 +70,15 @@ export function IconCheck({ size = 20, style, className }: IconProps) {
   );
 }
 
+// 關閉 / 清除（線性 X，比 × 字元置中更準）
+export function IconClose({ size = 20, style, className }: IconProps) {
+  return (
+    <svg {...base(size)} style={style} className={className} aria-hidden="true">
+      <path d="M6 6l12 12M18 6 6 18" />
+    </svg>
+  );
+}
+
 // 搜尋
 export function IconSearch({ size = 20, style, className }: IconProps) {
   return (

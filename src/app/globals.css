@@ -2,8 +2,8 @@
   --brand: #f39c12;
   --brand-dark: #e67e22;
   --brand-tint: #fff6e9;
-  /* 暖色中性系：底色帶一點奶油，襯托橘色主色而不搶戲 */
-  --bg: #faf7f2;
+  /* 暖色中性系：底色對到 Toast 的奶油色，襯托主色而不搶戲 */
+  --bg: #f5f1e5;
   --card: #ffffff;
   --text: #26221d;
   --muted: #8a827a;
@@ -91,32 +91,35 @@ button {
   position: sticky;
   top: var(--appbar-h);
   z-index: 9;
-  background: rgba(250, 247, 242, 0.92);
+  background: rgba(245, 241, 229, 0.94);
   backdrop-filter: saturate(1.2) blur(6px);
   border-bottom: 1px solid var(--border);
   display: flex;
-  gap: 8px;
+  gap: 18px;
   overflow-x: auto;
-  padding: 9px 12px;
+  padding: 2px 16px 0;
   scrollbar-width: none;
 }
 .catnav::-webkit-scrollbar {
   display: none;
 }
+/* Toast 式分頁：純文字 + 選中深色底線（導覽中性、主色只留給動作） */
 .catnav button {
   flex: 0 0 auto;
-  padding: 7px 14px;
-  font-size: 14px;
+  padding: 12px 2px;
+  margin-bottom: -1px;
+  font-size: 15px;
   font-weight: 600;
-  color: var(--brand-dark);
-  background: var(--brand-tint);
-  border-radius: 999px;
+  color: #8a827a;
+  background: transparent;
+  border-radius: 0;
+  border-bottom: 2.5px solid transparent;
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
+  transition: color 0.15s, border-color 0.15s;
 }
 .catnav button.active {
-  background: var(--brand);
-  color: #fff;
+  color: var(--text);
+  border-bottom-color: var(--text);
 }
 
 /* 捲動錨點：跳到分類時，讓標題落在頂欄+導覽列下方 */
@@ -138,7 +141,7 @@ button {
   font-weight: 800;
   letter-spacing: 0.5px;
   margin: 26px 0 6px;
-  color: var(--brand-dark);
+  color: var(--text);
 }
 .cat-note {
   font-size: 12px;
@@ -159,6 +162,35 @@ button {
 }
 .item.tappable {
   cursor: pointer;
+}
+/* 品項清單直接排在奶油底上（無白色外框，貼近 Toast） */
+.menu-list {
+  margin-bottom: 4px;
+}
+/* 滑鼠 hover 回饋（觸控裝置無效，不影響手機） */
+.item.tappable:hover {
+  background: rgba(0, 0, 0, 0.025);
+}
+.catnav button:hover {
+  color: var(--text);
+}
+.item-add:hover {
+  background: var(--brand-tint);
+}
+.opt-line:hover:not(.disabled) {
+  background: rgba(0, 0, 0, 0.015);
+}
+.btn-primary:not(:disabled):hover,
+.btn-ok:hover,
+.btn-danger:hover {
+  filter: brightness(0.95);
+}
+.btn-ghost:hover {
+  background: #e7e2da;
+}
+.sheet-close:hover,
+.searchbar .clear:hover {
+  background: #e2ddd4;
 }
 .item-photo {
   width: 96px;
@@ -391,6 +423,10 @@ button {
   border-radius: 999px;
   font-size: 18px;
   line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .sheet-line {
   display: flex;
@@ -498,9 +534,13 @@ button {
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
   flex: 0 0 auto;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 客製視窗（Toast 式）：灰底 + 白卡分組 */

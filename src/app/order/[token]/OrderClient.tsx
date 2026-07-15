@@ -5,6 +5,7 @@ import type { Category, MenuItem, ModifierGroup } from '@/lib/types';
 import { ORDER_TYPE } from '@/lib/config';
 import {
   IconCheck,
+  IconClose,
   IconDineIn,
   IconDish,
   IconSearch,
@@ -343,7 +344,7 @@ export default function OrderClient({
               aria-label="清除搜尋"
               onClick={() => setQuery('')}
             >
-              ×
+              <IconClose size={13} />
             </button>
           )}
         </div>
@@ -363,7 +364,7 @@ export default function OrderClient({
           >
             <div className="cat-title">{cat.name}</div>
             {cat.note && <div className="cat-note">＊{cat.note}</div>}
-            <div className="card">
+            <div className="menu-list">
               {cat.items.map((item) => {
                 // 有客製或多規格 → 點整張卡開客製視窗；單一規格 → 就地加減
                 const needsModal =
@@ -512,7 +513,7 @@ export default function OrderClient({
                 aria-label="關閉"
                 onClick={() => setReviewOpen(false)}
               >
-                ×
+                <IconClose size={16} />
               </button>
             </div>
 
@@ -706,7 +707,7 @@ function CustomizeModal({
         <div className="sheet-head">
           <h3>{item.name}</h3>
           <button className="sheet-close" aria-label="關閉" onClick={onClose}>
-            ×
+            <IconClose size={16} />
           </button>
         </div>
         {item.description && (
