@@ -156,7 +156,7 @@ button {
 .item {
   position: relative;
   display: flex;
-  align-items: stretch; /* 文字區塊撐滿照片高度，名稱置頂、價格沉底（同 Toast） */
+  align-items: center; /* 文字區塊對齊照片垂直置中 */
   gap: 14px;
   padding: 14px 8px;
   margin: 0 -8px; /* hover 底色左右各多一點，內容仍對齊 */
@@ -244,13 +244,12 @@ button {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-/* 價格：對齊 Toast .priceAvailability — 14px、深色 #252525、margin-top:auto 沉到底 */
+/* 價格：14px、深色 #252525；置中排版，名稱下方留一點間距 */
 .item-price {
   font-weight: 500;
   font-size: 14px;
   color: #252525;
-  margin-top: auto;
-  padding-top: 6px;
+  margin-top: 6px;
   font-variant-numeric: tabular-nums;
 }
 /* 右下角加入鈕：無底色無邊框，只留橘色「＋」（不搶戲） */
