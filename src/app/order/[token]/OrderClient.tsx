@@ -373,9 +373,11 @@ export default function OrderClient({
                 return (
                   <div
                     key={item.id}
-                    className={needsModal ? 'item tappable' : 'item'}
-                    onClick={
-                      needsModal ? () => setCustomizing(item) : undefined
+                    className="item tappable"
+                    onClick={() =>
+                      needsModal
+                        ? setCustomizing(item)
+                        : addSimpleVariant(item, simple, +1)
                     }
                   >
                     {item.imageUrl ? (
@@ -399,45 +401,25 @@ export default function OrderClient({
                       <div className="item-price">{priceLabel}</div>
                     </div>
 
-                    {needsModal ? (
-                      <button
-                        className={inCart > 0 ? 'item-add filled' : 'item-add'}
-                        aria-label={`選擇 ${item.name}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCustomizing(item);
-                        }}
-                      >
-                        {inCart > 0 ? inCart : '＋'}
-                      </button>
-                    ) : simpleQty > 0 ? (
-                      <div
-                        className="item-stepper"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                    {/* 統一：每個品項都是同一顆＋／已加入則顯示橘圓數量（增減量在購物車調整） */}
+                    {(() => {
+                      const qty = needsModal ? inCart : simpleQty;
+                      return (
                         <button
-                          aria-label="減少"
-                          onClick={() => addSimpleVariant(item, simple, -1)}
+                          className={qty > 0 ? 'item-add filled' : 'item-add'}
+                          aria-label={
+                            needsModal ? `選擇 ${item.name}` : `加入 ${item.name}`
+                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (needsModal) setCustomizing(item);
+                            else addSimpleVariant(item, simple, +1);
+                          }}
                         >
-                          −
+                          {qty > 0 ? qty : '＋'}
                         </button>
-                        <span className="n">{simpleQty}</span>
-                        <button
-                          aria-label="增加"
-                          onClick={() => addSimpleVariant(item, simple, +1)}
-                        >
-                          ＋
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        className="item-add"
-                        aria-label={`加入 ${item.name}`}
-                        onClick={() => addSimpleVariant(item, simple, +1)}
-                      >
-                        ＋
-                      </button>
-                    )}
+                      );
+                    })()}
                   </div>
                 );
               })}

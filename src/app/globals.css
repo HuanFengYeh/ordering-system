@@ -186,9 +186,6 @@ button {
 .catnav button:hover {
   color: var(--text);
 }
-.item-add:hover {
-  background: var(--brand-tint);
-}
 .opt-line:hover:not(.disabled),
 .opt-line:active:not(.disabled) {
   background: #faf4ea;
@@ -252,32 +249,30 @@ button {
   margin-top: 6px;
   font-variant-numeric: tabular-nums;
 }
-/* 右下角加入鈕：無底色無邊框，只留橘色「＋」（不搶戲） */
+/* 右下角加入鈕：無底色無邊框，只留橘色「＋」（不搶戲）。尺寸固定，不因狀態變化 */
 .item-add {
   position: absolute;
   right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
   background: transparent;
   border: none;
   color: var(--brand);
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 700;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-/* 已在購物車：以實心橘圓＋數字標示（有狀態才出現底色） */
+/* 已在購物車：同尺寸實心橘圓＋數量（僅顏色/字級變，不改大小） */
 .item-add.filled {
   background: var(--brand);
   color: #fff;
   font-size: 15px;
-  width: 30px;
-  height: 30px;
 }
 .item-stepper {
   position: absolute;
